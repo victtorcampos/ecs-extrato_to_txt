@@ -28,24 +28,22 @@ class TxtGenerator(TxtGeneratorPort):
             # Linha de lançamento
             data_formatada = lanc.data.strftime("%d/%m/%Y") if lanc.data else ""
             
-            # Mapear contas se disponível
-            conta_debito_mapeada = mapeamentos.get(lanc.conta_debito, self.CODIGO_CONTA_PADRAO)
-            
-            # Determinar código baseado no tipo de operação
-            # Código 45 para despesas, 9919 para receitas/movimentações
+            # Determinar código de operação baseado no tipo de operação
+            # Código 45 para aluguel, 9919 para demais operações
             codigo_operacao = "9919"
-            if lanc.historico and "PGTO" in lanc.historico.upper() and "ALUGUEL" in lanc.historico.upper():
+            historico_upper = (lanc.historico or "").upper()
+            if "ALUGUEL" in historico_upper:
                 codigo_operacao = "45"
             
-            # Formatar valor com vírgula
-            valor_formatado = f"{lanc.valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", "")
+            # Formatar valor com vírgula (sem separador de milhar)
+            valor_formatado = f"{lanc.valor:.2f}".replace(".", ",")
             
             linha = "|".join([
                 "",
                 self.CODIGO_REGISTRO_LANCAMENTO,
                 data_formatada,
                 codigo_operacao,
-                conta_debito_mapeada,
+                self.CODIGO_CONTA_PADRAO,  # Sempre usar código padrão 8818
                 valor_formatado,
                 "",
                 lanc.historico or "",
