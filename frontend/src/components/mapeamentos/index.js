@@ -1,0 +1,1 @@
+export { MapeamentosList } from './MapeamentosList';

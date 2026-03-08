@@ -5,3 +5,11 @@ from .usecases import (
     ConsultarLoteUseCase,
     DeletarLoteUseCase
 )
+from .mapeamento_usecases import (
+    CriarMapeamentoUseCase,
+    AtualizarMapeamentoUseCase,
+    AtualizarLoteMapeamentoUseCase,
+    ListarMapeamentosUseCase,
+    DeletarMapeamentoUseCase,
+    MapeamentoNaoEncontradoError
+)

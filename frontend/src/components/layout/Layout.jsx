@@ -4,7 +4,7 @@ import {
   LayoutDashboard, 
   Upload, 
   FileText, 
-  Settings,
+  GitBranch,
   Menu,
   X
 } from 'lucide-react';
@@ -14,6 +14,7 @@ const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/upload', label: 'Upload', icon: Upload },
   { path: '/lotes', label: 'Lotes', icon: FileText },
+  { path: '/mapeamentos', label: 'Mapeamentos', icon: GitBranch },
 ];
 
 export const Sidebar = ({ isOpen, onClose }) => {

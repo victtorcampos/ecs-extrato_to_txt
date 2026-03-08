@@ -62,8 +62,18 @@ class MapeamentoContaRepositoryPort(ABC):
         pass
     
     @abstractmethod
+    async def buscar_por_id(self, id: str) -> Optional[MapeamentoConta]:
+        """Busca mapeamento por ID"""
+        pass
+    
+    @abstractmethod
     async def buscar_por_conta_cliente(self, cnpj: str, conta_cliente: str) -> Optional[MapeamentoConta]:
         """Busca mapeamento por conta do cliente"""
+        pass
+    
+    @abstractmethod
+    async def listar(self, skip: int = 0, limit: int = 100) -> List[MapeamentoConta]:
+        """Lista todos os mapeamentos"""
         pass
     
     @abstractmethod
@@ -72,6 +82,31 @@ class MapeamentoContaRepositoryPort(ABC):
         pass
     
     @abstractmethod
+    async def listar_cnpjs_distintos(self) -> List[str]:
+        """Lista CNPJs distintos que possuem mapeamentos"""
+        pass
+    
+    @abstractmethod
+    async def atualizar(self, mapeamento: MapeamentoConta) -> MapeamentoConta:
+        """Atualiza um mapeamento existente"""
+        pass
+    
+    @abstractmethod
+    async def atualizar_em_lote(self, ids: List[str], conta_padrao: str) -> int:
+        """Atualiza conta padrão em lote"""
+        pass
+    
+    @abstractmethod
     async def deletar(self, id: str) -> bool:
         """Remove um mapeamento"""
+        pass
+    
+    @abstractmethod
+    async def deletar_em_lote(self, ids: List[str]) -> int:
+        """Remove mapeamentos em lote"""
+        pass
+    
+    @abstractmethod
+    async def contar(self, cnpj: Optional[str] = None) -> int:
+        """Conta mapeamentos, opcionalmente filtrado por CNPJ"""
         pass

@@ -85,3 +85,54 @@ class MensagemResponse(BaseModel):
     """DTO de resposta genérica"""
     mensagem: str
     sucesso: bool = True
+
+
+# ============================================
+# DTOs para Mapeamento de Contas (Account Mappings)
+# ============================================
+
+class CriarMapeamentoRequest(BaseModel):
+    """DTO para criação de mapeamento"""
+    cnpj: str = Field(..., description="CNPJ da empresa (14 dígitos)")
+    conta_cliente: str = Field(..., description="Código da conta do cliente")
+    conta_padrao: str = Field(..., description="Código da conta padrão")
+    nome_conta_cliente: Optional[str] = Field(None, description="Nome da conta do cliente")
+    nome_conta_padrao: Optional[str] = Field(None, description="Nome da conta padrão")
+
+
+class AtualizarMapeamentoRequest(BaseModel):
+    """DTO para atualização de mapeamento"""
+    conta_padrao: Optional[str] = Field(None, description="Código da conta padrão")
+    nome_conta_cliente: Optional[str] = Field(None, description="Nome da conta do cliente")
+    nome_conta_padrao: Optional[str] = Field(None, description="Nome da conta padrão")
+
+
+class AtualizarLoteMapeamentoRequest(BaseModel):
+    """DTO para atualização em lote"""
+    ids: List[str] = Field(..., description="Lista de IDs dos mapeamentos")
+    conta_padrao: str = Field(..., description="Nova conta padrão para todos")
+
+
+class DeletarLoteMapeamentoRequest(BaseModel):
+    """DTO para exclusão em lote"""
+    ids: List[str] = Field(..., description="Lista de IDs dos mapeamentos")
+
+
+class MapeamentoResponse(BaseModel):
+    """DTO de resposta para mapeamento"""
+    id: str
+    cnpj: str
+    cnpj_formatado: str
+    conta_cliente: str
+    conta_padrao: str
+    nome_conta_cliente: Optional[str]
+    nome_conta_padrao: Optional[str]
+    criado_em: str
+
+
+class MapeamentoListResponse(BaseModel):
+    """DTO de resposta para lista de mapeamentos"""
+    items: List[MapeamentoResponse]
+    total: int
+    cnpjs_disponiveis: List[str]
+

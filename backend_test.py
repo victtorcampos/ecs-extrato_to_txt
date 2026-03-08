@@ -187,6 +187,272 @@ class AccountingBackendTester:
         except Exception as e:
             self.log_test("Error Handling", False, f"Exception: {str(e)}")
 
+    # === Account Mappings Tests ===
+
+    def test_account_mappings_list(self):
+        """Test GET /api/v1/account-mappings - list all mappings"""
+        try:
+            response = requests.get(f"{self.base_url}/api/v1/account-mappings", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["items", "total", "cnpjs_disponiveis"]
+                if all(field in data for field in required_fields):
+                    self.log_test("Account Mappings List", True, f"Found {data['total']} mappings")
+                    return True, data
+                else:
+                    self.log_test("Account Mappings List", False, f"Missing fields: {data}")
+            else:
+                self.log_test("Account Mappings List", False, f"Status code: {response.status_code}")
+        except Exception as e:
+            self.log_test("Account Mappings List", False, f"Exception: {str(e)}")
+        return False, {}
+
+    def test_account_mappings_filter_by_cnpj(self):
+        """Test GET /api/v1/account-mappings?cnpj=xxx - filter by CNPJ"""
+        test_cnpj = "24879861000150"  # Known CNPJ from context
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/v1/account-mappings", 
+                params={"cnpj": test_cnpj},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "items" in data:
+                    # Check if all returned items have the filtered CNPJ
+                    filtered_correctly = all(
+                        item.get("cnpj") == test_cnpj for item in data["items"]
+                    )
+                    if filtered_correctly:
+                        self.log_test("Account Mappings Filter (CNPJ)", True, f"Found {len(data['items'])} mappings for CNPJ {test_cnpj}")
+                        return True, data
+                    else:
+                        self.log_test("Account Mappings Filter (CNPJ)", False, "Filter not working correctly")
+                else:
+                    self.log_test("Account Mappings Filter (CNPJ)", False, f"Missing 'items' in response: {data}")
+            else:
+                self.log_test("Account Mappings Filter (CNPJ)", False, f"Status code: {response.status_code}")
+        except Exception as e:
+            self.log_test("Account Mappings Filter (CNPJ)", False, f"Exception: {str(e)}")
+        return False, {}
+
+    def test_account_mappings_cnpjs_endpoint(self):
+        """Test GET /api/v1/account-mappings/cnpjs - list available CNPJs"""
+        try:
+            response = requests.get(f"{self.base_url}/api/v1/account-mappings/cnpjs", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_test("Account Mappings CNPJs", True, f"Found {len(data)} CNPJs")
+                    return True, data
+                else:
+                    self.log_test("Account Mappings CNPJs", False, f"Expected list, got: {type(data)}")
+            else:
+                self.log_test("Account Mappings CNPJs", False, f"Status code: {response.status_code}")
+        except Exception as e:
+            self.log_test("Account Mappings CNPJs", False, f"Exception: {str(e)}")
+        return False, []
+
+    def test_create_account_mapping(self):
+        """Test POST /api/v1/account-mappings - create new mapping"""
+        try:
+            # Generate unique account numbers to avoid conflicts
+            import time
+            suffix = str(int(time.time() % 1000))
+            
+            payload = {
+                "cnpj": "11.222.333/0001-81",  # Valid CNPJ format
+                "conta_cliente": f"10{suffix}",
+                "conta_padrao": f"88{suffix}",
+                "nome_conta_cliente": f"Teste Conta Cliente {suffix}",
+                "nome_conta_padrao": f"Teste Conta Padrão {suffix}"
+            }
+            
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(
+                f"{self.base_url}/api/v1/account-mappings",
+                json=payload,
+                headers=headers,
+                timeout=10
+            )
+            
+            if response.status_code == 201:
+                data = response.json()
+                required_fields = ["id", "cnpj", "conta_cliente", "conta_padrao"]
+                if all(field in data for field in required_fields):
+                    self.log_test("Create Account Mapping", True, f"Created mapping ID: {data.get('id')}")
+                    return True, data
+                else:
+                    self.log_test("Create Account Mapping", False, f"Missing fields: {data}")
+            else:
+                error_msg = ""
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', response.text)
+                except:
+                    error_msg = response.text
+                self.log_test("Create Account Mapping", False, f"Status {response.status_code}: {error_msg}")
+        except Exception as e:
+            self.log_test("Create Account Mapping", False, f"Exception: {str(e)}")
+        return False, {}
+
+    def test_get_account_mapping(self, mapping_id: str):
+        """Test GET /api/v1/account-mappings/{id} - get specific mapping"""
+        try:
+            response = requests.get(f"{self.base_url}/api/v1/account-mappings/{mapping_id}", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["id", "cnpj", "conta_cliente", "conta_padrao"]
+                if all(field in data for field in required_fields):
+                    self.log_test("Get Account Mapping", True, f"Retrieved mapping: {mapping_id}")
+                    return True, data
+                else:
+                    self.log_test("Get Account Mapping", False, f"Missing fields: {data}")
+            elif response.status_code == 404:
+                self.log_test("Get Account Mapping", False, f"Mapping not found: {mapping_id}")
+            else:
+                self.log_test("Get Account Mapping", False, f"Status code: {response.status_code}")
+        except Exception as e:
+            self.log_test("Get Account Mapping", False, f"Exception: {str(e)}")
+        return False, {}
+
+    def test_update_account_mapping(self, mapping_id: str):
+        """Test PUT /api/v1/account-mappings/{id} - update mapping"""
+        try:
+            payload = {
+                "conta_padrao": "8820",  # Updated value
+                "nome_conta_cliente": "Teste Atualizado",
+                "nome_conta_padrao": "Padrão Atualizado"
+            }
+            
+            headers = {"Content-Type": "application/json"}
+            response = requests.put(
+                f"{self.base_url}/api/v1/account-mappings/{mapping_id}",
+                json=payload,
+                headers=headers,
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("conta_padrao") == payload["conta_padrao"]:
+                    self.log_test("Update Account Mapping", True, f"Updated mapping: {mapping_id}")
+                    return True, data
+                else:
+                    self.log_test("Update Account Mapping", False, f"Update not reflected: {data}")
+            elif response.status_code == 404:
+                self.log_test("Update Account Mapping", False, f"Mapping not found: {mapping_id}")
+            else:
+                error_msg = ""
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', response.text)
+                except:
+                    error_msg = response.text
+                self.log_test("Update Account Mapping", False, f"Status {response.status_code}: {error_msg}")
+        except Exception as e:
+            self.log_test("Update Account Mapping", False, f"Exception: {str(e)}")
+        return False, {}
+
+    def test_bulk_update_account_mappings(self, mapping_ids: list):
+        """Test PUT /api/v1/account-mappings/bulk/update - bulk update"""
+        if not mapping_ids:
+            self.log_test("Bulk Update Account Mappings", False, "No mapping IDs provided")
+            return False, {}
+            
+        try:
+            payload = {
+                "ids": mapping_ids,
+                "conta_padrao": "9999"  # Test bulk update value
+            }
+            
+            headers = {"Content-Type": "application/json"}
+            response = requests.put(
+                f"{self.base_url}/api/v1/account-mappings/bulk/update",
+                json=payload,
+                headers=headers,
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("sucesso") or "atualizado" in data.get("mensagem", "").lower():
+                    self.log_test("Bulk Update Account Mappings", True, f"Updated {len(mapping_ids)} mappings")
+                    return True, data
+                else:
+                    self.log_test("Bulk Update Account Mappings", False, f"Unexpected response: {data}")
+            else:
+                error_msg = ""
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', response.text)
+                except:
+                    error_msg = response.text
+                self.log_test("Bulk Update Account Mappings", False, f"Status {response.status_code}: {error_msg}")
+        except Exception as e:
+            self.log_test("Bulk Update Account Mappings", False, f"Exception: {str(e)}")
+        return False, {}
+
+    def test_delete_account_mapping(self, mapping_id: str):
+        """Test DELETE /api/v1/account-mappings/{id} - delete mapping"""
+        try:
+            response = requests.delete(f"{self.base_url}/api/v1/account-mappings/{mapping_id}", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "removido" in data.get("mensagem", "").lower():
+                    self.log_test("Delete Account Mapping", True, f"Deleted mapping: {mapping_id}")
+                    return True, data
+                else:
+                    self.log_test("Delete Account Mapping", False, f"Unexpected response: {data}")
+            elif response.status_code == 404:
+                self.log_test("Delete Account Mapping", False, f"Mapping not found: {mapping_id}")
+            else:
+                self.log_test("Delete Account Mapping", False, f"Status code: {response.status_code}")
+        except Exception as e:
+            self.log_test("Delete Account Mapping", False, f"Exception: {str(e)}")
+        return False, {}
+
+    def test_bulk_delete_account_mappings(self, mapping_ids: list):
+        """Test DELETE /api/v1/account-mappings/bulk/delete - bulk delete"""
+        if not mapping_ids:
+            self.log_test("Bulk Delete Account Mappings", False, "No mapping IDs provided")
+            return False, {}
+            
+        try:
+            payload = {"ids": mapping_ids}
+            
+            headers = {"Content-Type": "application/json"}
+            response = requests.delete(
+                f"{self.base_url}/api/v1/account-mappings/bulk/delete",
+                json=payload,
+                headers=headers,
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "removido" in data.get("mensagem", "").lower():
+                    self.log_test("Bulk Delete Account Mappings", True, f"Deleted {len(mapping_ids)} mappings")
+                    return True, data
+                else:
+                    self.log_test("Bulk Delete Account Mappings", False, f"Unexpected response: {data}")
+            else:
+                error_msg = ""
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', response.text)
+                except:
+                    error_msg = response.text
+                self.log_test("Bulk Delete Account Mappings", False, f"Status {response.status_code}: {error_msg}")
+        except Exception as e:
+            self.log_test("Bulk Delete Account Mappings", False, f"Exception: {str(e)}")
+        return False, {}
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Backend API Tests")
@@ -212,6 +478,44 @@ class AccountingBackendTester:
 
         # Test error handling
         self.test_api_error_handling()
+
+        print("\n" + "-" * 50)
+        print("🔗 Testing Account Mappings APIs")
+        print("-" * 50)
+
+        # Test Account Mappings endpoints
+        self.test_account_mappings_list()
+        self.test_account_mappings_filter_by_cnpj()
+        self.test_account_mappings_cnpjs_endpoint()
+
+        # Test Account Mappings CRUD
+        created_mapping = None
+        test_mapping_ids = []
+        
+        # Create a new mapping for testing
+        success, mapping_data = self.test_create_account_mapping()
+        if success:
+            created_mapping = mapping_data
+            test_mapping_ids.append(mapping_data["id"])
+            
+            # Test getting the created mapping
+            self.test_get_account_mapping(mapping_data["id"])
+            
+            # Test updating the mapping
+            self.test_update_account_mapping(mapping_data["id"])
+
+        # Create another mapping for bulk operations testing
+        success2, mapping_data2 = self.test_create_account_mapping()
+        if success2:
+            test_mapping_ids.append(mapping_data2["id"])
+
+        # Test bulk operations if we have mappings
+        if test_mapping_ids:
+            self.test_bulk_update_account_mappings(test_mapping_ids)
+            
+            # Clean up: delete the test mappings
+            for mapping_id in test_mapping_ids:
+                self.test_delete_account_mapping(mapping_id)
 
         # Print summary
         print("\n" + "=" * 50)

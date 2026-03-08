@@ -6,5 +6,12 @@ from .dtos import (
     LoteResponse,
     LoteDetalhadoResponse,
     EstatisticasResponse,
-    MensagemResponse
+    MensagemResponse,
+    # Account Mappings DTOs
+    CriarMapeamentoRequest,
+    AtualizarMapeamentoRequest,
+    AtualizarLoteMapeamentoRequest,
+    DeletarLoteMapeamentoRequest,
+    MapeamentoResponse,
+    MapeamentoListResponse
 )

@@ -8,6 +8,7 @@ import { Dashboard } from './components/dashboard';
 import { UploadForm } from './components/upload';
 import { LotesList, LoteDetail } from './components/lotes';
 import { PendenciasResolver } from './components/pendencias';
+import { MapeamentosList } from './components/mapeamentos';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/lotes" element={<LotesList />} />
           <Route path="/lotes/:id" element={<LoteDetail />} />
           <Route path="/lotes/:id/pendencias" element={<PendenciasResolver />} />
+          <Route path="/mapeamentos" element={<MapeamentosList />} />
         </Routes>
       </Layout>
     </BrowserRouter>

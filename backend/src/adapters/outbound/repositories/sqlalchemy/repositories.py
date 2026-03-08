@@ -231,6 +231,18 @@ class SQLAlchemyMapeamentoRepository(MapeamentoContaRepositoryPort):
     def __init__(self, session: AsyncSession):
         self.session = session
     
+    def _model_to_entity(self, model: MapeamentoContaModel) -> MapeamentoConta:
+        """Converte modelo para entidade"""
+        return MapeamentoConta(
+            id=model.id,
+            cnpj=model.cnpj,
+            conta_cliente=model.conta_cliente,
+            conta_padrao=model.conta_padrao,
+            nome_conta_cliente=model.nome_conta_cliente,
+            nome_conta_padrao=model.nome_conta_padrao,
+            criado_em=model.criado_em
+        )
+    
     async def salvar(self, mapeamento: MapeamentoConta) -> MapeamentoConta:
         # Verificar se já existe
         existing = await self.buscar_por_conta_cliente(mapeamento.cnpj, mapeamento.conta_cliente)
@@ -258,6 +270,13 @@ class SQLAlchemyMapeamentoRepository(MapeamentoContaRepositoryPort):
         await self.session.commit()
         return mapeamento
     
+    async def buscar_por_id(self, id: str) -> Optional[MapeamentoConta]:
+        result = await self.session.execute(
+            select(MapeamentoContaModel).where(MapeamentoContaModel.id == id)
+        )
+        model = result.scalar_one_or_none()
+        return self._model_to_entity(model) if model else None
+    
     async def buscar_por_conta_cliente(self, cnpj: str, conta_cliente: str) -> Optional[MapeamentoConta]:
         result = await self.session.execute(
             select(MapeamentoContaModel)
@@ -265,36 +284,55 @@ class SQLAlchemyMapeamentoRepository(MapeamentoContaRepositoryPort):
             .where(MapeamentoContaModel.conta_cliente == conta_cliente)
         )
         model = result.scalar_one_or_none()
-        if model:
-            return MapeamentoConta(
-                id=model.id,
-                cnpj=model.cnpj,
-                conta_cliente=model.conta_cliente,
-                conta_padrao=model.conta_padrao,
-                nome_conta_cliente=model.nome_conta_cliente,
-                nome_conta_padrao=model.nome_conta_padrao,
-                criado_em=model.criado_em
-            )
-        return None
+        return self._model_to_entity(model) if model else None
+    
+    async def listar(self, skip: int = 0, limit: int = 100) -> List[MapeamentoConta]:
+        result = await self.session.execute(
+            select(MapeamentoContaModel)
+            .order_by(MapeamentoContaModel.cnpj, MapeamentoContaModel.conta_cliente)
+            .offset(skip)
+            .limit(limit)
+        )
+        models = result.scalars().all()
+        return [self._model_to_entity(m) for m in models]
     
     async def listar_por_cnpj(self, cnpj: str) -> List[MapeamentoConta]:
         result = await self.session.execute(
             select(MapeamentoContaModel)
             .where(MapeamentoContaModel.cnpj == cnpj)
+            .order_by(MapeamentoContaModel.conta_cliente)
         )
         models = result.scalars().all()
-        return [
-            MapeamentoConta(
-                id=m.id,
-                cnpj=m.cnpj,
-                conta_cliente=m.conta_cliente,
-                conta_padrao=m.conta_padrao,
-                nome_conta_cliente=m.nome_conta_cliente,
-                nome_conta_padrao=m.nome_conta_padrao,
-                criado_em=m.criado_em
-            )
-            for m in models
-        ]
+        return [self._model_to_entity(m) for m in models]
+    
+    async def listar_cnpjs_distintos(self) -> List[str]:
+        result = await self.session.execute(
+            select(MapeamentoContaModel.cnpj).distinct().order_by(MapeamentoContaModel.cnpj)
+        )
+        return [row[0] for row in result.all()]
+    
+    async def atualizar(self, mapeamento: MapeamentoConta) -> MapeamentoConta:
+        result = await self.session.execute(
+            select(MapeamentoContaModel).where(MapeamentoContaModel.id == mapeamento.id)
+        )
+        model = result.scalar_one_or_none()
+        if model:
+            model.conta_padrao = mapeamento.conta_padrao
+            model.nome_conta_cliente = mapeamento.nome_conta_cliente
+            model.nome_conta_padrao = mapeamento.nome_conta_padrao
+            await self.session.commit()
+            await self.session.refresh(model)
+        return mapeamento
+    
+    async def atualizar_em_lote(self, ids: List[str], conta_padrao: str) -> int:
+        from sqlalchemy import update
+        result = await self.session.execute(
+            update(MapeamentoContaModel)
+            .where(MapeamentoContaModel.id.in_(ids))
+            .values(conta_padrao=conta_padrao)
+        )
+        await self.session.commit()
+        return result.rowcount
     
     async def deletar(self, id: str) -> bool:
         result = await self.session.execute(
@@ -302,3 +340,17 @@ class SQLAlchemyMapeamentoRepository(MapeamentoContaRepositoryPort):
         )
         await self.session.commit()
         return result.rowcount > 0
+    
+    async def deletar_em_lote(self, ids: List[str]) -> int:
+        result = await self.session.execute(
+            delete(MapeamentoContaModel).where(MapeamentoContaModel.id.in_(ids))
+        )
+        await self.session.commit()
+        return result.rowcount
+    
+    async def contar(self, cnpj: Optional[str] = None) -> int:
+        query = select(func.count(MapeamentoContaModel.id))
+        if cnpj:
+            query = query.where(MapeamentoContaModel.cnpj == cnpj)
+        result = await self.session.execute(query)
+        return result.scalar() or 0
