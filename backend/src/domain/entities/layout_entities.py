@@ -69,13 +69,26 @@ class ConfigPlanilha:
 class ConfigValor:
     """Como determinar se é débito ou crédito"""
     tipo_sinal: TipoSinal = TipoSinal.SINAL_VALOR
-    coluna_tipo: Optional[str] = None    # Coluna que indica D/C
-    mapeamento_tipo: Dict[str, str] = field(default_factory=lambda: {"D": "debito", "C": "credito"})
+    coluna_tipo: Optional[str] = None          # Coluna que indica D/C (para COLUNA_TIPO)
+    coluna_debito: Optional[str] = None        # Coluna de débito (para COLUNAS_SEPARADAS)
+    coluna_credito: Optional[str] = None       # Coluna de crédito (para COLUNAS_SEPARADAS)
+    case_insensitive: bool = True              # Normalizar texto para comparação
+    mapeamento_tipo: Dict[str, str] = field(default_factory=lambda: {
+        "D": "debito", "C": "credito",
+        "d": "debito", "c": "credito",
+        "débito": "debito", "crédito": "credito",
+        "debito": "debito", "credito": "credito",
+        "DÉBITO": "debito", "CRÉDITO": "credito",
+        "DEBITO": "debito", "CREDITO": "credito",
+    })
     
     def to_dict(self) -> dict:
         return {
             "tipo_sinal": self.tipo_sinal.value if isinstance(self.tipo_sinal, TipoSinal) else self.tipo_sinal,
             "coluna_tipo": self.coluna_tipo,
+            "coluna_debito": self.coluna_debito,
+            "coluna_credito": self.coluna_credito,
+            "case_insensitive": self.case_insensitive,
             "mapeamento_tipo": self.mapeamento_tipo
         }
     
@@ -84,7 +97,17 @@ class ConfigValor:
         return ConfigValor(
             tipo_sinal=TipoSinal(data.get("tipo_sinal", "sinal_valor")),
             coluna_tipo=data.get("coluna_tipo"),
-            mapeamento_tipo=data.get("mapeamento_tipo", {"D": "debito", "C": "credito"})
+            coluna_debito=data.get("coluna_debito"),
+            coluna_credito=data.get("coluna_credito"),
+            case_insensitive=data.get("case_insensitive", True),
+            mapeamento_tipo=data.get("mapeamento_tipo", {
+                "D": "debito", "C": "credito",
+                "d": "debito", "c": "credito",
+                "débito": "debito", "crédito": "credito",
+                "debito": "debito", "credito": "credito",
+                "DÉBITO": "debito", "CRÉDITO": "credito",
+                "DEBITO": "debito", "CREDITO": "credito",
+            })
         )
 
 

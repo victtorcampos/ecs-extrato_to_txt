@@ -79,6 +79,12 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - **Motor de Regras**: Suporte a FILTRO, TRANSFORMAÇÃO, VALIDAÇÃO e ENRIQUECIMENTO
 - **14 operadores de condição**: igual, diferente, maior, menor, contém, regex, etc.
 - **11 tipos de ação**: excluir, definir_valor, template, copiar_campo, maiúscula, etc.
+- **ConfigValor flexível**: 5 métodos de determinação D/C:
+  - `sinal_valor`: Positivo=Débito, Negativo=Crédito
+  - `coluna_tipo`: Uma coluna com valores D/C (com mapeamento editável de 12+ variantes)
+  - `colunas_separadas`: Colunas distintas para Débito e Crédito
+  - `fixo_debito` / `fixo_credito`: Tipo fixo
+  - Suporte a `case_insensitive` e mapeamento customizável de textos
 
 ### Frontend (2026-03-08)
 - Design System Swiss High-Contrast
@@ -105,6 +111,7 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - [x] MVP completo
 - [x] CRUD Mapeamentos
 - [x] Layouts de Importação + Regras de Processamento
+- [x] Bug: coluna layout_id faltando na tabela lotes (migração SQLite)
 
 ### P1 - Importante
 - [ ] Frontend: Construtor visual de regras aprimorado (RegraBuilder.jsx)

@@ -21,7 +21,8 @@ const TIPO_DADO_OPTIONS = [
 
 const TIPO_SINAL_OPTIONS = [
   { value: 'sinal_valor', label: 'Sinal do valor (+/-)' },
-  { value: 'coluna_tipo', label: 'Coluna D/C' },
+  { value: 'coluna_tipo', label: 'Uma coluna D/C' },
+  { value: 'colunas_separadas', label: 'Colunas separadas (Débito e Crédito)' },
   { value: 'fixo_debito', label: 'Sempre Débito' },
   { value: 'fixo_credito', label: 'Sempre Crédito' },
 ];
@@ -34,6 +35,39 @@ const emptyColuna = () => ({
   obrigatorio: false,
   valor_padrao: '',
 });
+
+const MapeamentoAdder = ({ onAdd }) => {
+  const [key, setKey] = useState('');
+  const [val, setVal] = useState('debito');
+  return (
+    <div className="flex items-center gap-2 pt-2 border-t border-slate-200 mt-2">
+      <input
+        type="text"
+        value={key}
+        onChange={(e) => setKey(e.target.value)}
+        placeholder="Texto (ex: Deb)"
+        data-testid="add-map-key"
+        className="h-8 flex-1 rounded border border-slate-300 bg-white px-2 text-xs font-mono focus:ring-2 focus:ring-slate-950"
+      />
+      <select
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        data-testid="add-map-val"
+        className="h-8 rounded border border-slate-300 bg-white px-2 text-xs focus:ring-2 focus:ring-slate-950"
+      >
+        <option value="debito">Débito</option>
+        <option value="credito">Crédito</option>
+      </select>
+      <button
+        onClick={() => { if (key.trim()) { onAdd(key.trim(), val); setKey(''); } }}
+        data-testid="add-map-btn"
+        className="h-8 px-3 text-xs bg-slate-900 text-white hover:bg-slate-800 rounded font-medium transition-colors"
+      >
+        <Plus className="w-3 h-3" />
+      </button>
+    </div>
+  );
+};
 
 export const LayoutForm = () => {
   const navigate = useNavigate();
@@ -50,7 +84,7 @@ export const LayoutForm = () => {
     descricao: '',
     config_planilha: { nome_aba: '', linha_cabecalho: 0, linha_inicio_dados: 1 },
     colunas: [emptyColuna()],
-    config_valor: { tipo_sinal: 'sinal_valor', coluna_tipo: '', mapeamento_tipo: { D: 'debito', C: 'credito' } },
+    config_valor: { tipo_sinal: 'sinal_valor', coluna_tipo: '', coluna_debito: '', coluna_credito: '', case_insensitive: true, mapeamento_tipo: { D: 'debito', C: 'credito', d: 'debito', c: 'credito', 'débito': 'debito', 'crédito': 'credito', debito: 'debito', credito: 'credito', 'DÉBITO': 'debito', 'CRÉDITO': 'credito', DEBITO: 'debito', CREDITO: 'credito' } },
     config_historico_padrao: { template: '{documento} - {conta_debito} -> {conta_credito}', campos_fallback: ['documento', 'conta_debito', 'conta_credito'] },
   });
 
@@ -331,31 +365,112 @@ export const LayoutForm = () => {
       {/* Config Valor (D/C) */}
       <section className="bg-white border border-slate-200 rounded-lg p-6 space-y-4">
         <h2 className="font-heading text-lg font-semibold text-slate-900">Determinação Débito/Crédito</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Método</label>
-            <select
-              value={form.config_valor.tipo_sinal}
-              onChange={(e) => setForm({ ...form, config_valor: { ...form.config_valor, tipo_sinal: e.target.value } })}
-              data-testid="config-tipo-sinal"
-              className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-slate-950"
-            >
-              {TIPO_SINAL_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
-          {form.config_valor.tipo_sinal === 'coluna_tipo' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Coluna D/C</label>
-              <input
-                type="text"
-                value={form.config_valor.coluna_tipo || ''}
-                onChange={(e) => setForm({ ...form, config_valor: { ...form.config_valor, coluna_tipo: e.target.value } })}
-                placeholder="Ex: E"
-                data-testid="config-coluna-tipo"
-                className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-slate-950"
-              />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Método</label>
+              <select
+                value={form.config_valor.tipo_sinal}
+                onChange={(e) => setForm({ ...form, config_valor: { ...form.config_valor, tipo_sinal: e.target.value } })}
+                data-testid="config-tipo-sinal"
+                className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-slate-950"
+              >
+                {TIPO_SINAL_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            {form.config_valor.tipo_sinal === 'coluna_tipo' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Coluna D/C</label>
+                <input
+                  type="text"
+                  value={form.config_valor.coluna_tipo || ''}
+                  onChange={(e) => setForm({ ...form, config_valor: { ...form.config_valor, coluna_tipo: e.target.value } })}
+                  placeholder="Ex: E"
+                  data-testid="config-coluna-tipo"
+                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-slate-950"
+                />
+              </div>
+            )}
+            {form.config_valor.tipo_sinal === 'colunas_separadas' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Coluna Débito</label>
+                  <input
+                    type="text"
+                    value={form.config_valor.coluna_debito || ''}
+                    onChange={(e) => setForm({ ...form, config_valor: { ...form.config_valor, coluna_debito: e.target.value } })}
+                    placeholder="Ex: F"
+                    data-testid="config-coluna-debito"
+                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-slate-950"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Coluna Crédito</label>
+                  <input
+                    type="text"
+                    value={form.config_valor.coluna_credito || ''}
+                    onChange={(e) => setForm({ ...form, config_valor: { ...form.config_valor, coluna_credito: e.target.value } })}
+                    placeholder="Ex: G"
+                    data-testid="config-coluna-credito"
+                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-slate-950"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Case insensitive + Mapeamento de valores (para coluna_tipo) */}
+          {form.config_valor.tipo_sinal === 'coluna_tipo' && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={form.config_valor.case_insensitive}
+                  onChange={(e) => setForm({ ...form, config_valor: { ...form.config_valor, case_insensitive: e.target.checked } })}
+                  data-testid="config-case-insensitive"
+                  className="w-4 h-4 accent-slate-900"
+                />
+                <label className="text-sm text-slate-700">Ignorar maiúsculas/minúsculas e acentos na comparação</label>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Mapeamento de Valores</label>
+                <p className="text-xs text-slate-500 mb-2">Define quais textos na coluna indicam Débito ou Crédito. Os valores padrão já cobrem as variantes mais comuns.</p>
+                <div className="bg-slate-50 border border-slate-200 rounded-md p-3 space-y-2">
+                  {Object.entries(form.config_valor.mapeamento_tipo).map(([key, val]) => (
+                    <div key={key} className="flex items-center gap-2 text-sm font-mono">
+                      <span className="w-24 text-slate-600 truncate" title={key}>"{key}"</span>
+                      <span className="text-slate-400">&rarr;</span>
+                      <span className={val === 'debito' ? 'text-blue-700 font-medium' : 'text-emerald-700 font-medium'}>
+                        {val === 'debito' ? 'Débito' : 'Crédito'}
+                      </span>
+                      <button
+                        onClick={() => {
+                          const novoMap = { ...form.config_valor.mapeamento_tipo };
+                          delete novoMap[key];
+                          setForm({ ...form, config_valor: { ...form.config_valor, mapeamento_tipo: novoMap } });
+                        }}
+                        className="ml-auto p-1 hover:bg-red-50 rounded text-red-400 hover:text-red-600"
+                        data-testid={`remove-map-${key}`}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <MapeamentoAdder
+                    onAdd={(key, val) => {
+                      setForm({
+                        ...form,
+                        config_valor: {
+                          ...form.config_valor,
+                          mapeamento_tipo: { ...form.config_valor.mapeamento_tipo, [key]: val },
+                        },
+                      });
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>

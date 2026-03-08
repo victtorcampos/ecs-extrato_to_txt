@@ -2,6 +2,7 @@
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import text
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -29,3 +30,8 @@ async def get_session() -> AsyncSession:
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Migração: adicionar coluna layout_id na tabela lotes se não existir
+        result = await conn.execute(text("PRAGMA table_info(lotes)"))
+        columns = [row[1] for row in result.fetchall()]
+        if "layout_id" not in columns:
+            await conn.execute(text("ALTER TABLE lotes ADD COLUMN layout_id VARCHAR(36)"))

@@ -14,10 +14,11 @@ class TipoDado(str, Enum):
 
 class TipoSinal(str, Enum):
     """Como determinar se lançamento é débito ou crédito"""
-    COLUNA_TIPO = "coluna_tipo"      # Usa uma coluna específica (D/C)
-    SINAL_VALOR = "sinal_valor"      # Positivo=Débito, Negativo=Crédito
-    FIXO_DEBITO = "fixo_debito"      # Sempre débito
-    FIXO_CREDITO = "fixo_credito"    # Sempre crédito
+    COLUNA_TIPO = "coluna_tipo"            # Usa uma coluna específica (D/C)
+    COLUNAS_SEPARADAS = "colunas_separadas"  # Colunas separadas para débito e crédito
+    SINAL_VALOR = "sinal_valor"            # Positivo=Débito, Negativo=Crédito
+    FIXO_DEBITO = "fixo_debito"            # Sempre débito
+    FIXO_CREDITO = "fixo_credito"          # Sempre crédito
 
 
 class TipoRegra(str, Enum):
