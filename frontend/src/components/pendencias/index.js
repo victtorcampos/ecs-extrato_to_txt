@@ -1,0 +1,1 @@
+export { PendenciasResolver } from './PendenciasResolver';
