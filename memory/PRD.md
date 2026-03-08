@@ -42,6 +42,7 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - [x] **CRUD de Mapeamento de Contas** (2026-03-08)
 - [x] **Layouts de Importação Excel** (2026-03-08)
 - [x] **Regras de Processamento** (2026-03-08)
+- [x] **Upload com Preview Excel e Layout Inline** (2026-03-08)
 
 ## O que foi implementado
 
@@ -105,6 +106,13 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - **Ações**: Ativar/desativar, editar, clonar, excluir
 - **Navegação**: Link "Layouts" com ícone FileSpreadsheet no sidebar
 
+### Frontend - Upload com Preview e Layout Inline (2026-03-08)
+- **Fluxo em 3 passos**: 1. Upload do Excel, 2. Dados do Lote, 3. Layout de Importação
+- **Preview do Excel**: Tabela com cabeçalhos e primeiras 5 linhas de dados reais
+- **Seleção de Layout**: Radio entre "Layout existente" (dropdown filtrado por CNPJ) e "Novo layout"
+- **Novo Layout inline**: Config de planilha (aba, linhas) + mapeamento visual de colunas com amostras
+- **Endpoint novo**: `POST /api/v1/import-layouts/preview-excel` (extrai abas, cabeçalhos, dados)
+
 ## Backlog (P0/P1/P2)
 
 ### P0 - Crítico
@@ -112,6 +120,7 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - [x] CRUD Mapeamentos
 - [x] Layouts de Importação + Regras de Processamento
 - [x] Bug: coluna layout_id faltando na tabela lotes (migração SQLite)
+- [x] Upload com Preview Excel, Seleção/Criação de Layout Inline
 
 ### P1 - Importante
 - [ ] Frontend: Construtor visual de regras aprimorado (RegraBuilder.jsx)
