@@ -21,7 +21,7 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - **Backend**: FastAPI + Python 3.11
 - **Database**: SQLite (SQLAlchemy async)
 - **Frontend**: React 18 + TailwindCSS
-- **Email**: Resend (configurável)
+- **Email**: Resend (configurável, atualmente MOCK)
 
 ## User Personas
 1. **Contadores**: Upload de lotes, verificação de status
@@ -40,13 +40,15 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - [x] Resolução de pendências de mapeamento
 - [x] Exclusão de lotes
 - [x] **CRUD de Mapeamento de Contas** (2026-03-08)
+- [x] **Layouts de Importação Excel** (2026-03-08)
+- [x] **Regras de Processamento** (2026-03-08)
 
 ## O que foi implementado
 
 ### Backend (2026-03-08)
 - Estrutura Clean Architecture completa
-- Value Objects: CNPJ, PeriodoContabil, Email, ContaContabil
-- Entidades: Lote, Lancamento, PendenciaMapeamento, MapeamentoConta
+- Value Objects: CNPJ, PeriodoContabil, Email, ContaContabil, TipoDado, TipoSinal, TipoRegra, OperadorCondicao, TipoAcao
+- Entidades: Lote, Lancamento, PendenciaMapeamento, MapeamentoConta, LayoutExcel, ColunaLayout, ConfigPlanilha, ConfigValor, ConfigHistoricoPadrao, RegraProcessamento, CondicaoRegra, AcaoRegra
 - Casos de Uso: CriarProtocolo, ProcessarLote, ResolverPendencia, ConsultarLote, DeletarLote
 - Portas e Adaptadores seguindo Hexagonal Architecture
 - API REST com endpoints /api/v1/lotes
@@ -60,6 +62,24 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - **Controller REST**: /api/v1/account-mappings (CRUD + bulk operations)
 - **DTOs**: Request/Response para todas as operações
 
+### Backend - Layouts de Importação (2026-03-08)
+- **Use Cases**: CriarLayout, AtualizarLayout, ListarLayouts, DeletarLayout, ClonarLayout
+- **Repository Port**: LayoutRepositoryPort (interface completa)
+- **SQLAlchemy Repository**: CRUD completo para layouts
+- **Controller REST**: /api/v1/import-layouts (CRUD + clone + campos-disponiveis)
+- **DTOs**: CriarLayoutRequest, AtualizarLayoutRequest, ClonarLayoutRequest, LayoutResponse, LayoutListResponse
+- **23 campos de mapeamento** disponíveis (valor, conta_debito, conta_credito, data, historico, etc.)
+
+### Backend - Regras de Processamento (2026-03-08)
+- **Use Cases**: CriarRegra, AtualizarRegra, ListarRegras, ReordenarRegras, DeletarRegra, TestarRegra, AplicarRegras
+- **Repository Port**: RegraRepositoryPort (interface completa)
+- **SQLAlchemy Repository**: CRUD completo + reordenação
+- **Controller REST**: /api/v1/import-layouts/{layout_id}/rules (CRUD + reorder)
+- **DTOs**: CriarRegraRequest, AtualizarRegraRequest, ReordenarRegrasRequest, RegraResponse, RegraListResponse
+- **Motor de Regras**: Suporte a FILTRO, TRANSFORMAÇÃO, VALIDAÇÃO e ENRIQUECIMENTO
+- **14 operadores de condição**: igual, diferente, maior, menor, contém, regex, etc.
+- **11 tipos de ação**: excluir, definir_valor, template, copiar_campo, maiúscula, etc.
+
 ### Frontend (2026-03-08)
 - Design System Swiss High-Contrast
 - Dashboard com estatísticas
@@ -70,40 +90,38 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 
 ### Frontend - Mapeamentos (2026-03-08)
 - **Nova página**: /mapeamentos
-- **Menu lateral**: Link "Mapeamentos" com ícone GitBranch
-- **Filtro por CNPJ**: Dropdown com CNPJs disponíveis
-- **Busca**: Por conta cliente ou padrão
-- **Seleção múltipla**: Checkbox em cada linha + "Selecionar todos"
-- **Atualização em lote**: Campo superior para definir conta padrão
-- **Exclusão em lote**: Botão "Excluir Selecionados"
-- **Modal CRUD**: Criar/Editar mapeamentos
-- **Feedback visual**: Mensagens de sucesso/erro
+- **Filtro por CNPJ**, busca, seleção múltipla, edição em lote
+
+### Frontend - Layouts de Importação (2026-03-08)
+- **Nova página**: /layouts (lista de layouts com filtro por CNPJ)
+- **Formulário**: /layouts/novo e /layouts/{id}/editar (CNPJ, nome, descrição, config planilha, mapeamento de colunas, config valor D/C)
+- **Detalhe**: /layouts/{id} (colunas mapeadas + lista de regras com criação/edição inline)
+- **Ações**: Ativar/desativar, editar, clonar, excluir
+- **Navegação**: Link "Layouts" com ícone FileSpreadsheet no sidebar
 
 ## Backlog (P0/P1/P2)
 
 ### P0 - Crítico
 - [x] MVP completo
+- [x] CRUD Mapeamentos
+- [x] Layouts de Importação + Regras de Processamento
 
 ### P1 - Importante
+- [ ] Frontend: Construtor visual de regras aprimorado (RegraBuilder.jsx)
+- [ ] Backend: Preview de parsing com layout + arquivo de exemplo
+- [ ] Backend: Integrar layouts/regras no fluxo de processamento de lotes existente
 - [ ] Configuração de credenciais Resend para envio real de emails
-- [ ] Testes unitários para domínio
-- [ ] Validação mais robusta de CNPJ com consulta externa
 
 ### P2 - Melhorias
-- [ ] Suporte a múltiplos layouts de Excel
+- [ ] Clonagem avançada de layouts (com UI dedicada)
+- [ ] Migração de processamento assíncrono para Celery/Redis
 - [ ] Histórico de processamentos
 - [ ] Export de relatórios em PDF
-- [ ] Notificações por webhook
-
-## Próximas Tarefas
-1. Configurar chave API Resend para envio de emails
-2. Adicionar suporte a mais layouts de Excel
-3. Implementar autenticação (se necessário no futuro)
+- [ ] Testes unitários para domínio
 
 ## Endpoints da API
 
 ### Lotes (/api/v1/lotes)
-
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
 | GET | /api/health | Health check |
@@ -117,11 +135,9 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 | DELETE | /api/v1/lotes/{id} | Excluir lote |
 
 ### Account Mappings (/api/v1/account-mappings)
-
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
 | GET | /api/v1/account-mappings | Listar mapeamentos |
-| GET | /api/v1/account-mappings?cnpj=xxx | Filtrar por CNPJ |
 | GET | /api/v1/account-mappings/cnpjs | Listar CNPJs distintos |
 | GET | /api/v1/account-mappings/{id} | Obter mapeamento |
 | POST | /api/v1/account-mappings | Criar mapeamento |
@@ -129,3 +145,25 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 | PUT | /api/v1/account-mappings/bulk/update | Atualização em lote |
 | DELETE | /api/v1/account-mappings/{id} | Excluir mapeamento |
 | DELETE | /api/v1/account-mappings/bulk/delete | Exclusão em lote |
+
+### Import Layouts (/api/v1/import-layouts)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | /api/v1/import-layouts | Listar layouts |
+| GET | /api/v1/import-layouts/campos-disponiveis | Campos disponíveis |
+| GET | /api/v1/import-layouts/cnpjs | Listar CNPJs distintos |
+| GET | /api/v1/import-layouts/{id} | Obter layout |
+| POST | /api/v1/import-layouts | Criar layout |
+| PUT | /api/v1/import-layouts/{id} | Atualizar layout |
+| POST | /api/v1/import-layouts/{id}/clone | Clonar layout |
+| DELETE | /api/v1/import-layouts/{id} | Excluir layout |
+
+### Processing Rules (/api/v1/import-layouts/{layout_id}/rules)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | .../rules | Listar regras |
+| GET | .../rules/{id} | Obter regra |
+| POST | .../rules | Criar regra |
+| PUT | .../rules/{id} | Atualizar regra |
+| PUT | .../rules/reorder | Reordenar regras |
+| DELETE | .../rules/{id} | Excluir regra |
