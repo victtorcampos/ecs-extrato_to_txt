@@ -136,3 +136,164 @@ class MapeamentoListResponse(BaseModel):
     total: int
     cnpjs_disponiveis: List[str]
 
+
+# ============================================
+# DTOs para Layouts de Importação Excel
+# ============================================
+
+class ColunaLayoutDTO(BaseModel):
+    """DTO para coluna de layout"""
+    id: Optional[str] = None
+    campo_destino: str = Field(..., description="Campo de destino do lançamento")
+    coluna_excel: str = Field(..., description="Coluna ou índice no Excel")
+    tipo_dado: str = Field(default="string")
+    formato: Optional[str] = None
+    obrigatorio: bool = False
+    valor_padrao: Optional[str] = None
+
+
+class ConfigPlanilhaDTO(BaseModel):
+    """DTO para configuração de planilha"""
+    nome_aba: Optional[str] = None
+    linha_cabecalho: int = 0
+    linha_inicio_dados: int = 1
+
+
+class ConfigValorDTO(BaseModel):
+    """DTO para configuração de valor (D/C)"""
+    tipo_sinal: str = "sinal_valor"
+    coluna_tipo: Optional[str] = None
+    mapeamento_tipo: Dict[str, str] = Field(default_factory=lambda: {"D": "debito", "C": "credito"})
+
+
+class ConfigHistoricoPadraoDTO(BaseModel):
+    """DTO para configuração de histórico padrão"""
+    template: str = "{documento} - {conta_debito} -> {conta_credito}"
+    campos_fallback: List[str] = Field(default_factory=lambda: ["documento", "conta_debito", "conta_credito"])
+
+
+class CriarLayoutRequest(BaseModel):
+    """DTO para criação de layout"""
+    cnpj: str = Field(..., description="CNPJ da empresa")
+    nome: str = Field(..., description="Nome do layout")
+    descricao: Optional[str] = None
+    config_planilha: Optional[ConfigPlanilhaDTO] = None
+    colunas: Optional[List[ColunaLayoutDTO]] = None
+    config_valor: Optional[ConfigValorDTO] = None
+    config_historico_padrao: Optional[ConfigHistoricoPadraoDTO] = None
+
+
+class AtualizarLayoutRequest(BaseModel):
+    """DTO para atualização de layout"""
+    nome: Optional[str] = None
+    descricao: Optional[str] = None
+    ativo: Optional[bool] = None
+    config_planilha: Optional[ConfigPlanilhaDTO] = None
+    colunas: Optional[List[ColunaLayoutDTO]] = None
+    config_valor: Optional[ConfigValorDTO] = None
+    config_historico_padrao: Optional[ConfigHistoricoPadraoDTO] = None
+
+
+class ClonarLayoutRequest(BaseModel):
+    """DTO para clonagem de layout"""
+    novo_cnpj: Optional[str] = None
+    novo_nome: Optional[str] = None
+
+
+class LayoutResponse(BaseModel):
+    """DTO de resposta para layout"""
+    id: str
+    cnpj: str
+    nome: str
+    descricao: Optional[str]
+    ativo: bool
+    config_planilha: dict
+    colunas: List[dict]
+    config_valor: dict
+    config_historico_padrao: dict
+    total_colunas: int
+    total_regras: int = 0
+    criado_em: str
+    atualizado_em: str
+
+
+class LayoutListResponse(BaseModel):
+    """DTO de resposta para lista de layouts"""
+    items: List[LayoutResponse]
+    total: int
+    cnpjs_disponiveis: List[str]
+
+
+# ============================================
+# DTOs para Regras de Processamento
+# ============================================
+
+class CondicaoRegraDTO(BaseModel):
+    """DTO para condição de regra"""
+    id: Optional[str] = None
+    campo: str
+    operador: str = "igual"
+    valor: Optional[str] = None
+    valor_fim: Optional[str] = None
+    case_sensitive: bool = False
+
+
+class AcaoRegraDTO(BaseModel):
+    """DTO para ação de regra"""
+    tipo_acao: str = "definir_valor"
+    campo_destino: Optional[str] = None
+    valor: Optional[str] = None
+    parametros: Dict = Field(default_factory=dict)
+
+
+class CriarRegraRequest(BaseModel):
+    """DTO para criação de regra"""
+    nome: str = Field(..., description="Nome da regra")
+    descricao: Optional[str] = None
+    tipo: str = Field(default="filtro", description="Tipo da regra: filtro, transformacao, validacao, enriquecimento")
+    condicoes: List[CondicaoRegraDTO] = Field(default_factory=list)
+    condicoes_ou: Optional[List[CondicaoRegraDTO]] = None
+    acao: AcaoRegraDTO
+    acoes_extras: Optional[List[AcaoRegraDTO]] = None
+    ativo: bool = True
+
+
+class AtualizarRegraRequest(BaseModel):
+    """DTO para atualização de regra"""
+    nome: Optional[str] = None
+    descricao: Optional[str] = None
+    tipo: Optional[str] = None
+    condicoes: Optional[List[CondicaoRegraDTO]] = None
+    condicoes_ou: Optional[List[CondicaoRegraDTO]] = None
+    acao: Optional[AcaoRegraDTO] = None
+    acoes_extras: Optional[List[AcaoRegraDTO]] = None
+    ativo: Optional[bool] = None
+
+
+class ReordenarRegrasRequest(BaseModel):
+    """DTO para reordenar regras"""
+    ordem_ids: List[str] = Field(..., description="IDs na nova ordem")
+
+
+class RegraResponse(BaseModel):
+    """DTO de resposta para regra"""
+    id: str
+    layout_id: str
+    nome: str
+    descricao: Optional[str]
+    ordem: int
+    ativo: bool
+    tipo: str
+    condicoes: List[dict]
+    condicoes_ou: List[dict]
+    acao: dict
+    acoes_extras: List[dict]
+    criado_em: str
+    atualizado_em: str
+
+
+class RegraListResponse(BaseModel):
+    """DTO de resposta para lista de regras"""
+    items: List[RegraResponse]
+    total: int
+

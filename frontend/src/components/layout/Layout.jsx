@@ -5,6 +5,7 @@ import {
   Upload, 
   FileText, 
   GitBranch,
+  FileSpreadsheet,
   Menu,
   X
 } from 'lucide-react';
@@ -15,6 +16,7 @@ const navItems = [
   { path: '/upload', label: 'Upload', icon: Upload },
   { path: '/lotes', label: 'Lotes', icon: FileText },
   { path: '/mapeamentos', label: 'Mapeamentos', icon: GitBranch },
+  { path: '/layouts', label: 'Layouts', icon: FileSpreadsheet },
 ];
 
 export const Sidebar = ({ isOpen, onClose }) => {

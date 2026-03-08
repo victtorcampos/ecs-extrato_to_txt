@@ -13,5 +13,23 @@ from .dtos import (
     AtualizarLoteMapeamentoRequest,
     DeletarLoteMapeamentoRequest,
     MapeamentoResponse,
-    MapeamentoListResponse
+    MapeamentoListResponse,
+    # Layout DTOs
+    ColunaLayoutDTO,
+    ConfigPlanilhaDTO,
+    ConfigValorDTO,
+    ConfigHistoricoPadraoDTO,
+    CriarLayoutRequest,
+    AtualizarLayoutRequest,
+    ClonarLayoutRequest,
+    LayoutResponse,
+    LayoutListResponse,
+    # Regra DTOs
+    CondicaoRegraDTO,
+    AcaoRegraDTO,
+    CriarRegraRequest,
+    AtualizarRegraRequest,
+    ReordenarRegrasRequest,
+    RegraResponse,
+    RegraListResponse,
 )

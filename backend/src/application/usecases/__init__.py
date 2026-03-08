@@ -13,3 +13,19 @@ from .mapeamento_usecases import (
     DeletarMapeamentoUseCase,
     MapeamentoNaoEncontradoError
 )
+from .layout_usecases import (
+    CriarLayoutUseCase,
+    AtualizarLayoutUseCase,
+    ListarLayoutsUseCase,
+    DeletarLayoutUseCase,
+    ClonarLayoutUseCase
+)
+from .regra_usecases import (
+    CriarRegraUseCase,
+    AtualizarRegraUseCase,
+    ListarRegrasUseCase,
+    ReordenarRegrasUseCase,
+    DeletarRegraUseCase,
+    TestarRegraUseCase,
+    AplicarRegrasUseCase
+)

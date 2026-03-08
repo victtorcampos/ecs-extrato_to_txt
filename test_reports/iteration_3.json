@@ -1,0 +1,90 @@
+{
+  "summary": "Comprehensive testing of Layouts de Importação Excel and Regras de Processamento feature completed. All 19 backend API tests passed (100%). Frontend UI tests passed - layout creation, listing, detail page, rules CRUD, and edit functionality all working correctly.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✅ Backend: GET /api/v1/import-layouts - Lista layouts",
+    "✅ Backend: GET /api/v1/import-layouts?cnpj=xxx - Filtro por CNPJ",
+    "✅ Backend: GET /api/v1/import-layouts/campos-disponiveis - Campos para mapeamento",
+    "✅ Backend: POST /api/v1/import-layouts - Criar layout com CNPJ válido (11222333000181)",
+    "✅ Backend: POST /api/v1/import-layouts - Rejeita CNPJ inválido (400)",
+    "✅ Backend: GET /api/v1/import-layouts/{id} - Obter layout por ID",
+    "✅ Backend: GET /api/v1/import-layouts/{id} - Retorna 404 para ID inexistente",
+    "✅ Backend: PUT /api/v1/import-layouts/{id} - Atualizar layout (nome, ativo, colunas)",
+    "✅ Backend: POST /api/v1/import-layouts/{id}/clone - Clonar layout",
+    "✅ Backend: DELETE /api/v1/import-layouts/{id} - Deletar layout",
+    "✅ Backend: GET /api/v1/import-layouts/{layout_id}/rules - Lista regras de um layout",
+    "✅ Backend: POST /api/v1/import-layouts/{layout_id}/rules - Criar regra tipo filtro",
+    "✅ Backend: POST /api/v1/import-layouts/{layout_id}/rules - Criar regra tipo transformação",
+    "✅ Backend: POST /api/v1/import-layouts/{layout_id}/rules - Criar regra tipo validação",
+    "✅ Backend: PUT /api/v1/import-layouts/{layout_id}/rules/{rule_id} - Atualizar regra",
+    "✅ Backend: DELETE /api/v1/import-layouts/{layout_id}/rules/{rule_id} - Deletar regra",
+    "✅ Backend: GET /api/v1/import-layouts/{layout_id}/rules/{rule_id} - Obter regra específica",
+    "✅ Backend: Layout total_regras contador atualiza corretamente",
+    "✅ Backend: DELETE layout cascades to delete rules",
+    "✅ Frontend: Navigation sidebar shows 'Layouts' link with correct icon",
+    "✅ Frontend: /layouts page loads with correct title 'Layouts de Importação'",
+    "✅ Frontend: Empty state displayed when no layouts exist",
+    "✅ Frontend: 'Novo Layout' and 'Atualizar' buttons present and clickable",
+    "✅ Frontend: CNPJ filter dropdown appears when CNPJs exist",
+    "✅ Frontend: /layouts/novo form page loads with all required fields",
+    "✅ Frontend: Layout form - CNPJ, Nome, Descrição inputs work correctly",
+    "✅ Frontend: Layout form - Config planilha section (nome_aba, linha_cabecalho, linha_inicio)",
+    "✅ Frontend: Layout form - Add/remove column functionality works",
+    "✅ Frontend: Layout form - Campo destino dropdown populated from campos-disponiveis",
+    "✅ Frontend: Layout form - Save creates layout and redirects to list",
+    "✅ Frontend: Layout cards display with correct info (nome, CNPJ, colunas, regras)",
+    "✅ Frontend: Layout card buttons (toggle, edit, clone, rules, delete) work",
+    "✅ Frontend: /layouts/{id} detail page shows colunas table",
+    "✅ Frontend: /layouts/{id} detail page shows 'Nova Regra' button",
+    "✅ Frontend: Empty rules state displayed when no rules",
+    "✅ Frontend: Rule form inline appears when clicking 'Nova Regra'",
+    "✅ Frontend: Rule form - Nome, Tipo, Descrição, Condições, Ação fields work",
+    "✅ Frontend: Rule creation saves and shows rule card with SE/ENTÃO format",
+    "✅ Frontend: Rule cards show edit/delete buttons",
+    "✅ Frontend: /layouts/{id}/editar page loads with pre-filled data",
+    "✅ Frontend: Edit page - CNPJ input is disabled (non-editable)"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_layouts_and_rules.py",
+    "/app/test_reports/pytest/pytest_layouts_rules.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_layouts_and_rules.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (19/19 tests passed)",
+    "frontend": "100% (all UI flows working)"
+  },
+
+  "test_credentials": "CNPJ: 11222333000181 (valid CNPJ for testing)",
+
+  "seed_data_creation": "Test data created and cleaned up during tests. No persistent test data left.",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": true,
+
+  "context_for_next_testing_agent": "Layouts and Rules feature fully tested. All CRUD operations for both layouts and rules work correctly. The layout form supports column mapping with campo_destino dropdown from /api/v1/import-layouts/campos-disponiveis. Rules support types: filtro, transformacao, validacao, enriquecimento. Condition operators include: igual, diferente, maior, menor, contem, vazio, etc. Action types include: excluir, definir_valor, maiuscula, etc.",
+
+  "mocked_apis": {
+    "email_sender": "Email sending is mocked (not tested in this iteration)"
+  }
+}

@@ -60,7 +60,6 @@ export const healthCheck = async () => {
   return response.data;
 };
 
-// Account Mappings API (Mapeamento de Contas)
 export const mapeamentosApi = {
   listar: async (params = {}) => {
     const response = await api.get('/api/v1/account-mappings', { params });
@@ -109,3 +108,81 @@ export const mapeamentosApi = {
 };
 
 export default api;
+
+// Layouts de Importação API
+export const layoutsApi = {
+  listar: async (params = {}) => {
+    const response = await api.get('/api/v1/import-layouts', { params });
+    return response.data;
+  },
+
+  listarCnpjs: async () => {
+    const response = await api.get('/api/v1/import-layouts/cnpjs');
+    return response.data;
+  },
+
+  camposDisponiveis: async () => {
+    const response = await api.get('/api/v1/import-layouts/campos-disponiveis');
+    return response.data;
+  },
+
+  obter: async (id) => {
+    const response = await api.get(`/api/v1/import-layouts/${id}`);
+    return response.data;
+  },
+
+  criar: async (data) => {
+    const response = await api.post('/api/v1/import-layouts', data);
+    return response.data;
+  },
+
+  atualizar: async (id, data) => {
+    const response = await api.put(`/api/v1/import-layouts/${id}`, data);
+    return response.data;
+  },
+
+  clonar: async (id, data = {}) => {
+    const response = await api.post(`/api/v1/import-layouts/${id}/clone`, data);
+    return response.data;
+  },
+
+  deletar: async (id) => {
+    const response = await api.delete(`/api/v1/import-layouts/${id}`);
+    return response.data;
+  },
+};
+
+// Regras de Processamento API
+export const regrasApi = {
+  listar: async (layoutId, params = {}) => {
+    const response = await api.get(`/api/v1/import-layouts/${layoutId}/rules`, { params });
+    return response.data;
+  },
+
+  obter: async (layoutId, regraId) => {
+    const response = await api.get(`/api/v1/import-layouts/${layoutId}/rules/${regraId}`);
+    return response.data;
+  },
+
+  criar: async (layoutId, data) => {
+    const response = await api.post(`/api/v1/import-layouts/${layoutId}/rules`, data);
+    return response.data;
+  },
+
+  atualizar: async (layoutId, regraId, data) => {
+    const response = await api.put(`/api/v1/import-layouts/${layoutId}/rules/${regraId}`, data);
+    return response.data;
+  },
+
+  reordenar: async (layoutId, ordemIds) => {
+    const response = await api.put(`/api/v1/import-layouts/${layoutId}/rules/reorder`, {
+      ordem_ids: ordemIds,
+    });
+    return response.data;
+  },
+
+  deletar: async (layoutId, regraId) => {
+    const response = await api.delete(`/api/v1/import-layouts/${layoutId}/rules/${regraId}`);
+    return response.data;
+  },
+};

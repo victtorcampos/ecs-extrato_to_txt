@@ -1,0 +1,202 @@
+"""Controllers REST para API de Layouts de Importação Excel"""
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.adapters.inbound.rest.dto import (
+    CriarLayoutRequest,
+    AtualizarLayoutRequest,
+    ClonarLayoutRequest,
+    LayoutResponse,
+    LayoutListResponse,
+    MensagemResponse,
+)
+from src.adapters.outbound.repositories.sqlalchemy import (
+    SQLAlchemyLayoutRepository,
+    SQLAlchemyRegraRepository,
+)
+from src.application.usecases import (
+    CriarLayoutUseCase,
+    AtualizarLayoutUseCase,
+    ListarLayoutsUseCase,
+    DeletarLayoutUseCase,
+    ClonarLayoutUseCase,
+)
+from src.domain.entities import LayoutExcel
+from src.domain.exceptions import DomainError, LayoutNaoEncontradoError
+from src.domain.value_objects import get_campos_disponiveis
+from src.config.database import get_session
+
+
+router = APIRouter(prefix="/api/v1/import-layouts", tags=["Import Layouts"])
+
+
+async def _get_repos(session: AsyncSession):
+    layout_repo = SQLAlchemyLayoutRepository(session)
+    regra_repo = SQLAlchemyRegraRepository(session)
+    return layout_repo, regra_repo
+
+
+def _layout_to_response(layout: LayoutExcel, total_regras: int = 0) -> LayoutResponse:
+    return LayoutResponse(
+        id=layout.id,
+        cnpj=layout.cnpj,
+        nome=layout.nome,
+        descricao=layout.descricao,
+        ativo=layout.ativo,
+        config_planilha=layout.config_planilha.to_dict(),
+        colunas=[c.to_dict() for c in layout.colunas],
+        config_valor=layout.config_valor.to_dict(),
+        config_historico_padrao=layout.config_historico_padrao.to_dict(),
+        total_colunas=layout.total_colunas,
+        total_regras=total_regras,
+        criado_em=layout.criado_em.isoformat() if layout.criado_em else "",
+        atualizado_em=layout.atualizado_em.isoformat() if layout.atualizado_em else "",
+    )
+
+
+@router.get("", response_model=LayoutListResponse)
+async def listar_layouts(
+    cnpj: Optional[str] = Query(None, description="Filtrar por CNPJ"),
+    apenas_ativos: bool = Query(False, description="Mostrar apenas ativos"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    session: AsyncSession = Depends(get_session),
+):
+    """Lista layouts de importação"""
+    try:
+        layout_repo, regra_repo = await _get_repos(session)
+        use_case = ListarLayoutsUseCase(layout_repo)
+
+        layouts = await use_case.listar(cnpj=cnpj, apenas_ativos=apenas_ativos, skip=skip, limit=limit)
+        total = await use_case.contar(cnpj=cnpj)
+        cnpjs = await use_case.listar_cnpjs()
+
+        items = []
+        for layout in layouts:
+            n_regras = await regra_repo.contar_por_layout(layout.id)
+            items.append(_layout_to_response(layout, n_regras))
+
+        return LayoutListResponse(items=items, total=total, cnpjs_disponiveis=cnpjs)
+    except DomainError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/campos-disponiveis")
+async def campos_disponiveis():
+    """Retorna campos disponíveis para mapeamento de colunas"""
+    campos = get_campos_disponiveis()
+    return {k: {"label": v["label"], "tipo": v["tipo"].value, "obrigatorio": v["obrigatorio"]} for k, v in campos.items()}
+
+
+@router.get("/cnpjs", response_model=list[str])
+async def listar_cnpjs(session: AsyncSession = Depends(get_session)):
+    """Lista CNPJs distintos que possuem layouts"""
+    layout_repo = SQLAlchemyLayoutRepository(session)
+    use_case = ListarLayoutsUseCase(layout_repo)
+    return await use_case.listar_cnpjs()
+
+
+@router.get("/{layout_id}", response_model=LayoutResponse)
+async def obter_layout(layout_id: str, session: AsyncSession = Depends(get_session)):
+    """Obtém um layout específico por ID"""
+    layout_repo, regra_repo = await _get_repos(session)
+    use_case = ListarLayoutsUseCase(layout_repo)
+
+    layout = await use_case.buscar_por_id(layout_id)
+    if not layout:
+        raise HTTPException(status_code=404, detail="Layout não encontrado")
+
+    n_regras = await regra_repo.contar_por_layout(layout.id)
+    return _layout_to_response(layout, n_regras)
+
+
+@router.post("", response_model=LayoutResponse, status_code=201)
+async def criar_layout(request: CriarLayoutRequest, session: AsyncSession = Depends(get_session)):
+    """Cria um novo layout de importação"""
+    try:
+        layout_repo = SQLAlchemyLayoutRepository(session)
+        use_case = CriarLayoutUseCase(layout_repo)
+
+        layout = await use_case.executar(
+            cnpj=request.cnpj,
+            nome=request.nome,
+            descricao=request.descricao,
+            config_planilha=request.config_planilha.model_dump() if request.config_planilha else None,
+            colunas=[c.model_dump() for c in request.colunas] if request.colunas else None,
+            config_valor=request.config_valor.model_dump() if request.config_valor else None,
+            config_historico_padrao=request.config_historico_padrao.model_dump() if request.config_historico_padrao else None,
+        )
+
+        return _layout_to_response(layout)
+    except DomainError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.put("/{layout_id}", response_model=LayoutResponse)
+async def atualizar_layout(
+    layout_id: str,
+    request: AtualizarLayoutRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """Atualiza um layout existente"""
+    try:
+        layout_repo, regra_repo = await _get_repos(session)
+        use_case = AtualizarLayoutUseCase(layout_repo)
+
+        layout = await use_case.executar(
+            layout_id=layout_id,
+            nome=request.nome,
+            descricao=request.descricao,
+            ativo=request.ativo,
+            config_planilha=request.config_planilha.model_dump() if request.config_planilha else None,
+            colunas=[c.model_dump() for c in request.colunas] if request.colunas else None,
+            config_valor=request.config_valor.model_dump() if request.config_valor else None,
+            config_historico_padrao=request.config_historico_padrao.model_dump() if request.config_historico_padrao else None,
+        )
+
+        n_regras = await regra_repo.contar_por_layout(layout.id)
+        return _layout_to_response(layout, n_regras)
+    except LayoutNaoEncontradoError:
+        raise HTTPException(status_code=404, detail="Layout não encontrado")
+    except DomainError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{layout_id}/clone", response_model=LayoutResponse, status_code=201)
+async def clonar_layout(
+    layout_id: str,
+    request: ClonarLayoutRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """Clona um layout existente"""
+    try:
+        layout_repo, regra_repo = await _get_repos(session)
+        use_case = ClonarLayoutUseCase(layout_repo, regra_repo)
+
+        layout = await use_case.executar(
+            layout_id=layout_id,
+            novo_cnpj=request.novo_cnpj,
+            novo_nome=request.novo_nome,
+        )
+
+        n_regras = await regra_repo.contar_por_layout(layout.id)
+        return _layout_to_response(layout, n_regras)
+    except LayoutNaoEncontradoError:
+        raise HTTPException(status_code=404, detail="Layout não encontrado")
+    except DomainError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/{layout_id}", response_model=MensagemResponse)
+async def deletar_layout(layout_id: str, session: AsyncSession = Depends(get_session)):
+    """Remove um layout e suas regras"""
+    try:
+        layout_repo, regra_repo = await _get_repos(session)
+        use_case = DeletarLayoutUseCase(layout_repo, regra_repo)
+        await use_case.executar(layout_id)
+        return MensagemResponse(mensagem="Layout removido com sucesso")
+    except LayoutNaoEncontradoError:
+        raise HTTPException(status_code=404, detail="Layout não encontrado")
+    except DomainError as e:
+        raise HTTPException(status_code=400, detail=str(e))

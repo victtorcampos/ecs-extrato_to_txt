@@ -1,0 +1,156 @@
+<analysis>**original_problem_statement:**
+O usuário solicitou a criação de um backend para um sistema de processamento de lotes contábeis, seguindo os princípios de Clean Architecture (Arquitetura Hexagonal).
+
+**PRODUCT REQUIREMENTS:**
+1.  **Core Functionality:**
+    *   Fazer upload de arquivos Excel (lotes contábeis) via API.
+    *   Processar os lotes de forma assíncrona.
+    *   Validar dados, como o período contábil.
+    *   Mapear contas contábeis do cliente para contas padrão, tratando pendências.
+    *   Permitir a resolução de pendências de mapeamento.
+    *   Gerar um arquivo de saída no formato TXT após o processamento bem-sucedido.
+    *   Permitir a consulta e exclusão de lotes.
+2.  **Architecture:**
+    *   Backend em Python com FastAPI, seguindo rigorosamente a Clean Architecture.
+    *   Frontend em React (SPA).
+    *   API exposta em .
+    *   O backend deve servir a aplicação React.
+3.  **Additional Features Requested:**
+    *   **CRUD de Mapeamento de Contas:** Implementar uma interface no frontend e endpoints no backend para gerenciar os mapeamentos de contas contábeis, incluindo edição em lote.
+    *   **Layouts de Importação e Regras:** Criar um sistema dinâmico para que o usuário possa definir diferentes layouts de importação de arquivos Excel e criar regras de transformação/validação para os dados extraídos.
+    *   **Manual de Instruções:** Criar um arquivo  para guiar a instalação e execução do projeto em um ambiente Windows.
+
+**User's preferred language**: Portuguese (pt-BR). The next agent MUST respond in Portuguese.
+
+**what currently exists?**
+Uma aplicação full-stack (FastAPI + React) totalmente funcional, construída do zero seguindo a Clean Architecture. O sistema suporta o upload e processamento de lotes contábeis, possui um dashboard para visualização, e uma tela dedicada para o gerenciamento (CRUD) de mapeamentos de contas, incluindo filtros e edição em lote. Um  foi criado e atualizado para auxiliar na configuração local do projeto.
+
+**Last working item**:
+-   **Last item agent was working:** O agente estava no meio da implementação da funcionalidade de **Layouts de Importação de Excel e Regras de Processamento**. A proposta detalhada foi aprovada pelo usuário. O agente já havia criado as camadas de  e  (entidades, VOs, exceções, portas e casos de uso) e estava iniciando a camada de  no backend. Especificamente, havia acabado de criar os arquivos para os repositórios SQLAlchemy.
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** backend testing agent
+-   **User Testing Done:** N
+
+**All Pending/In progress Issue list**:
+Nenhum bug ou problema pendente foi identificado. O trabalho atual é a continuação de uma nova feature.
+
+**In progress Task List**:
+-   **Task 1: Concluir a implementação da funcionalidade Layouts de Importação e Regras (P0)**
+    -   **Where to resume:** O agente deve continuar a implementação na camada de  do backend. A sequência é:
+        1.  Implementar os repositórios SQLAlchemy recém-criados:  e .
+        2.  Implementar o  e o  na camada de adaptadores de saída ().
+        3.  Criar os DTOs (, ) e os Controllers (, ) na camada de adaptadores de entrada ().
+        4.  Atualizar o arquivo de injeção de dependência ().
+        5.  Registrar os novos roteadores no .
+        6.  Testar os novos endpoints do backend via .
+        7.  Após o backend, implementar a interface do frontend conforme a proposta (listas, formulários, builder de regras).
+    -   **What will be achieved with this?** O sistema se tornará flexível, permitindo que os usuários configurem como diferentes formatos de arquivos Excel devem ser lidos e como os dados devem ser transformados e validados automaticamente, eliminando a necessidade de código hardcoded.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** both
+
+**Upcoming and Future Tasks**
+-   **Upcoming Tasks (Fases 2 e 3 da feature atual):**
+    -   **P1:** Implementar o frontend para a criação e gerenciamento de Layouts e Regras.
+    -   **P1:** Implementar o motor de regras () para suportar regras de  e .
+    -   **P2:** Criar um construtor visual de regras no frontend ().
+    -   **P2:** Implementar a funcionalidade de preview do parsing com base em um layout e um arquivo de exemplo.
+    -   **P2:** Implementar a clonagem de layouts.
+-   **Future Tasks:**
+    -   **P2:** Migrar o processamento assíncrono de  do FastAPI para uma solução mais robusta como Celery/Redis, conforme sugerido na conversa inicial.
+    -   **P2:** Concluir a integração real de envio de e-mails (ex: Resend), solicitando a chave de API ao usuário.
+
+**Completed work in this session**
+-   Arquitetura e implementação inicial completa da aplicação full-stack (Backend Contábil + Frontend React) seguindo Clean Architecture.
+-   Funcionalidade de upload de lotes ().
+-   Funcionalidade de CRUD para Mapeamento de Contas (), incluindo interface frontend com filtros e edição em lote.
+-   Criação e atualização de um  para configuração local.
+-   Correção de erros de  no frontend.
+-   Elaboração e aprovação de uma proposta detalhada para a feature de Layouts e Regras.
+-   Início da implementação da feature Layouts e Regras (camadas de Domínio e Aplicação do backend concluídas).
+
+**Earlier issues found/mentioned but not fixed**
+-   None.
+
+**Known issue recurrence from previous fork**
+-   N/A
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Backend:** Python, FastAPI, Clean Architecture, SQLAlchemy (async), aiosqlite, Pydantic.
+-   **Frontend:** React, TailwindCSS, Axios.
+-   **Database:** SQLite.
+-   **Design Pattern:** Ports and Adapters (Hexagonal Architecture).
+-   **Async:** FastAPI .
+
+**key DB schema**
+-   **lotes**: Armazena informações dos lotes processados (protocolo, cnpj, status, etc.).
+-   **lancamentos**: Armazena os lançamentos contábeis individuais de cada lote.
+-   **mapeamentos_contas**: Tabela para o mapeamento de contas do cliente para contas padrão.
+-   **layouts_excel (New, In-Progress)**: Armazenará as configurações dos layouts de importação.
+-   **regras_processamento (New, In-Progress)**: Armazenará as regras de transformação associadas a cada layout.
+
+**changes in tech stack**
+-   None.
+
+**All files of reference**
+-   **/app/backend/src/**: Todo o código-fonte do backend, organizado por camadas da Clean Architecture.
+-   **/app/frontend/src/**: Todo o código-fonte do frontend.
+-   **/app/PRD.md**: Documento que descreve os requisitos e o que já foi implementado.
+-   **/app/manual.md**: Guia de configuração e uso local do projeto.
+-   **Proposal in Chat History:** A proposta detalhada para Layouts e Regras (Chat Message 264) é o guia principal para a tarefa atual.
+
+**Areas that need refactoring**:
+-   None. The current architecture is clean and scalable.
+
+**key api endpoints**
+-   : Gerenciamento de lotes.
+-   : CRUD de mapeamentos de contas.
+-   : Atualização em lote de mapeamentos.
+-    (In-Progress): CRUD para layouts de importação.
+-    (In-Progress): CRUD para regras de processamento.
+
+**Critical Info for New Agent**
+-   Aderência estrita à Clean Architecture é um requisito fundamental do projeto. Qualquer nova implementação deve seguir a separação de camadas (Domain, Application, Adapters).
+-   A tarefa atual é continuar a implementação da feature Layouts e Regras com base na proposta detalhada e aprovada pelo usuário no chat. O trabalho deve ser retomado a partir da camada de  do backend.
+-   O usuário interage em português e espera respostas no mesmo idioma.
+
+**documents and test reports created in this job**
+-   
+-   
+-   
+-   
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User:** Autorizou a implementação da proposta de Layouts e Regras. *(Status: In Progress)*
+2.  **User:** Solicitou uma proposta de implementação para Layouts de importação de Excel e Regras/Filtros. *(Status: Completed, proposal provided and approved)*
+3.  **User:** Solicitou a funcionalidade de gerenciar mapeamentos de contas (CRUD). *(Status: Completed)*
+4.  **User:** Reportou um erro de  no frontend. *(Status: Completed, fixed)*
+5.  **User:** Pediu a criação de um arquivo  para execução local. *(Status: Completed)*
+6.  **User:** Forneceu o arquivo  como exemplo de saída. *(Status: Completed)*
+7.  **User:** Forneceu o arquivo  como exemplo de entrada. *(Status: Completed)*
+8.  **User:** Respondeu às perguntas iniciais do agente para definir o escopo. *(Status: Completed)*
+9.  **User:** Enviou o problema inicial. *(Status: Completed)*
+10. **User:** Pediu para iniciar a tarefa. *(Status: Completed)*
+
+**Project Health Check:**
+-   **Broken:** Nada. A última versão estável (com a feature de Mapeamentos) foi testada e funciona.
+-   **Mocked:** O serviço de envio de e-mail () é um mock. O usuário pediu uma integração real, que é uma tarefa futura pendente.
+
+**3rd Party Integrations**
+-   **python-calamine:** Para leitura de arquivos Excel.
+-   **fastapi-mail:** Usado para a estrutura de envio de e-mail (atualmente mockado). O agente pesquisou  como uma opção de integração real.
+-   **SQLAlchemy / aiosqlite:** Para acesso ao banco de dados.
+
+**Testing status**
+-   **Testing agent used after significant changes:** YES (Após a feature de Mapeamentos).
+-   **Test files created:** , .
+-   **Known regressions:** None.
+
+**Credentials to test flow:**
+Nenhuma credencial de usuário é necessária, pois o sistema não possui autenticação.
+
+**What agent forgot to execute**
+-   O agente não solicitou ao usuário as credenciais para a integração real de e-mail (ex: chave de API do Resend), apesar de o usuário ter optado por isso no início. Essa é uma pendência para quando a tarefa de e-mail for priorizada.</analysis>

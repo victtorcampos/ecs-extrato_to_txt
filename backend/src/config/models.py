@@ -1,6 +1,6 @@
 """Modelos SQLAlchemy para persistência"""
 from datetime import datetime
-from sqlalchemy import Column, String, Integer, Float, Text, DateTime, Enum as SQLEnum, JSON
+from sqlalchemy import Column, String, Integer, Float, Text, DateTime, Boolean, Enum as SQLEnum, JSON
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -16,6 +16,7 @@ class LoteModel(Base):
     periodo_ano = Column(Integer)
     email_notificacao = Column(String(255))
     nome_layout = Column(String(100))
+    layout_id = Column(String(36), nullable=True)  # Referência ao layout usado
     codigo_matriz_filial = Column(String(50))
     
     status = Column(String(20), default="aguardando")
@@ -45,3 +46,46 @@ class MapeamentoContaModel(Base):
     nome_conta_cliente = Column(String(255), nullable=True)
     nome_conta_padrao = Column(String(255), nullable=True)
     criado_em = Column(DateTime, default=datetime.now)
+
+
+class LayoutExcelModel(Base):
+    """Modelo ORM para Layout de Importação Excel"""
+    __tablename__ = "layouts_excel"
+    
+    id = Column(String(36), primary_key=True)
+    cnpj = Column(String(14), index=True)
+    nome = Column(String(100))
+    descricao = Column(Text, nullable=True)
+    ativo = Column(Boolean, default=True)
+    
+    # Configurações em JSON
+    config_planilha_json = Column(JSON, default=dict)
+    colunas_json = Column(JSON, default=list)
+    config_valor_json = Column(JSON, default=dict)
+    config_historico_padrao_json = Column(JSON, default=dict)
+    
+    criado_em = Column(DateTime, default=datetime.now)
+    atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+
+class RegraProcessamentoModel(Base):
+    """Modelo ORM para Regra de Processamento"""
+    __tablename__ = "regras_processamento"
+    
+    id = Column(String(36), primary_key=True)
+    layout_id = Column(String(36), index=True)
+    nome = Column(String(100))
+    descricao = Column(Text, nullable=True)
+    ordem = Column(Integer, default=0)
+    ativo = Column(Boolean, default=True)
+    
+    tipo = Column(String(20))  # filtro, transformacao, validacao, enriquecimento
+    
+    # Configurações em JSON
+    condicoes_json = Column(JSON, default=list)
+    condicoes_ou_json = Column(JSON, default=list)
+    acao_json = Column(JSON, default=dict)
+    acoes_extras_json = Column(JSON, default=list)
+    
+    criado_em = Column(DateTime, default=datetime.now)
+    atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
