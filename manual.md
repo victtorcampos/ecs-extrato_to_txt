@@ -33,14 +33,16 @@ C:\App\python\app1.tech.vcinf\
 │   │   │   │   └── __init__.py
 │   │   │   ├── usecases\
 │   │   │   │   ├── __init__.py
-│   │   │   │   └── usecases.py
+│   │   │   │   ├── usecases.py
+│   │   │   │   └── mapeamento_usecases.py   ⚠️ NOVO!
 │   │   │   └── __init__.py
 │   │   ├── adapters\
 │   │   │   ├── inbound\
 │   │   │   │   ├── rest\
 │   │   │   │   │   ├── controllers\
 │   │   │   │   │   │   ├── __init__.py
-│   │   │   │   │   │   └── lote_controller.py
+│   │   │   │   │   │   ├── lote_controller.py
+│   │   │   │   │   │   └── account_mapping_controller.py  ⚠️ NOVO!
 │   │   │   │   │   ├── dto\
 │   │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   │   └── dtos.py
@@ -97,9 +99,12 @@ C:\App\python\app1.tech.vcinf\
     │   │   │   ├── LotesList.jsx
     │   │   │   ├── LoteDetail.jsx
     │   │   │   └── index.js
-    │   │   └── pendencias\
-    │   │       ├── PendenciasResolver.jsx
-    │   │       └── index.js
+    │   │   ├── pendencias\
+    │   │   │   ├── PendenciasResolver.jsx
+    │   │   │   └── index.js
+    │   │   └── mapeamentos\             ⚠️ NOVO!
+    │   │       ├── MapeamentosList.jsx  ⚠️ NOVO!
+    │   │       └── index.js             ⚠️ NOVO!
     │   ├── lib\                    ⚠️ IMPORTANTE!
     │   │   └── utils.js            ⚠️ ESTE ARQUIVO É OBRIGATÓRIO!
     │   ├── services\

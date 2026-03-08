@@ -39,6 +39,7 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - [x] Detalhes do lote com lançamentos
 - [x] Resolução de pendências de mapeamento
 - [x] Exclusão de lotes
+- [x] **CRUD de Mapeamento de Contas** (2026-03-08)
 
 ## O que foi implementado
 
@@ -52,6 +53,13 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - Parser Excel com python-calamine
 - Gerador TXT no formato padrão
 
+### Backend - Account Mappings (2026-03-08)
+- **Use Cases**: CriarMapeamento, AtualizarMapeamento, AtualizarLoteMapeamento, ListarMapeamentos, DeletarMapeamento
+- **Repository Port**: MapeamentoContaRepositoryPort (interface completa)
+- **SQLAlchemy Repository**: CRUD completo + operações em lote
+- **Controller REST**: /api/v1/account-mappings (CRUD + bulk operations)
+- **DTOs**: Request/Response para todas as operações
+
 ### Frontend (2026-03-08)
 - Design System Swiss High-Contrast
 - Dashboard com estatísticas
@@ -59,6 +67,17 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - Lista de Lotes com filtros e paginação
 - Detalhes do Lote com lançamentos
 - Resolução de Pendências
+
+### Frontend - Mapeamentos (2026-03-08)
+- **Nova página**: /mapeamentos
+- **Menu lateral**: Link "Mapeamentos" com ícone GitBranch
+- **Filtro por CNPJ**: Dropdown com CNPJs disponíveis
+- **Busca**: Por conta cliente ou padrão
+- **Seleção múltipla**: Checkbox em cada linha + "Selecionar todos"
+- **Atualização em lote**: Campo superior para definir conta padrão
+- **Exclusão em lote**: Botão "Excluir Selecionados"
+- **Modal CRUD**: Criar/Editar mapeamentos
+- **Feedback visual**: Mensagens de sucesso/erro
 
 ## Backlog (P0/P1/P2)
 
@@ -83,6 +102,8 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 
 ## Endpoints da API
 
+### Lotes (/api/v1/lotes)
+
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
 | GET | /api/health | Health check |
@@ -94,3 +115,17 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 | POST | /api/v1/lotes/{id}/reprocessar | Reprocessar lote |
 | GET | /api/v1/lotes/{id}/download | Download TXT |
 | DELETE | /api/v1/lotes/{id} | Excluir lote |
+
+### Account Mappings (/api/v1/account-mappings)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | /api/v1/account-mappings | Listar mapeamentos |
+| GET | /api/v1/account-mappings?cnpj=xxx | Filtrar por CNPJ |
+| GET | /api/v1/account-mappings/cnpjs | Listar CNPJs distintos |
+| GET | /api/v1/account-mappings/{id} | Obter mapeamento |
+| POST | /api/v1/account-mappings | Criar mapeamento |
+| PUT | /api/v1/account-mappings/{id} | Atualizar mapeamento |
+| PUT | /api/v1/account-mappings/bulk/update | Atualização em lote |
+| DELETE | /api/v1/account-mappings/{id} | Excluir mapeamento |
+| DELETE | /api/v1/account-mappings/bulk/delete | Exclusão em lote |
