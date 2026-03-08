@@ -126,6 +126,11 @@ export const layoutsApi = {
     return response.data;
   },
 
+  previewExcel: async (data) => {
+    const response = await api.post('/api/v1/import-layouts/preview-excel', data);
+    return response.data;
+  },
+
   obter: async (id) => {
     const response = await api.get(`/api/v1/import-layouts/${id}`);
     return response.data;

@@ -32,4 +32,7 @@ from .dtos import (
     ReordenarRegrasRequest,
     RegraResponse,
     RegraListResponse,
+    # Preview Excel DTOs
+    PreviewExcelRequest,
+    PreviewExcelResponse,
 )

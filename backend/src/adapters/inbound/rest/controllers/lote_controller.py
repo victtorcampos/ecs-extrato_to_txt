@@ -53,6 +53,7 @@ def _lote_to_response(lote: Lote) -> LoteResponse:
         periodo=f"{lote.periodo_mes:02d}/{lote.periodo_ano}",
         email_notificacao=lote.email_notificacao,
         nome_layout=lote.nome_layout,
+        layout_id=lote.layout_id,
         codigo_matriz_filial=lote.codigo_matriz_filial,
         status=lote.status.value if isinstance(lote.status, StatusLote) else lote.status,
         mensagem_erro=lote.mensagem_erro,
@@ -126,7 +127,8 @@ async def criar_lote(
             arquivo_base64=request.arquivo_base64,
             nome_arquivo=request.nome_arquivo,
             codigo_matriz_filial=request.codigo_matriz_filial,
-            nome_layout=request.nome_layout
+            nome_layout=request.nome_layout,
+            layout_id=request.layout_id
         )
         
         # Agendar processamento em background

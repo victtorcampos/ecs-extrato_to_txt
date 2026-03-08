@@ -64,6 +64,7 @@ class Lote:
     periodo_ano: int = 2026
     email_notificacao: str = ""
     nome_layout: str = "padrao"
+    layout_id: Optional[str] = None
     codigo_matriz_filial: str = ""
     
     status: StatusLote = StatusLote.AGUARDANDO

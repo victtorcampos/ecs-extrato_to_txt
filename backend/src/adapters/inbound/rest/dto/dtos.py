@@ -14,6 +14,7 @@ class CriarLoteRequest(BaseModel):
     nome_arquivo: str = Field(..., description="Nome do arquivo original")
     codigo_matriz_filial: str = Field(default="", description="Código da matriz/filial")
     nome_layout: str = Field(default="padrao", description="Nome do layout a ser usado")
+    layout_id: Optional[str] = Field(default=None, description="ID do layout de importação a usar")
 
 
 class ResolverPendenciasRequest(BaseModel):
@@ -55,6 +56,7 @@ class LoteResponse(BaseModel):
     periodo: str
     email_notificacao: str
     nome_layout: str
+    layout_id: Optional[str] = None
     codigo_matriz_filial: str
     status: str
     mensagem_erro: Optional[str]
@@ -307,3 +309,26 @@ class RegraListResponse(BaseModel):
     items: List[RegraResponse]
     total: int
 
+
+
+# ============================================
+# DTOs para Preview de Excel
+# ============================================
+
+class PreviewExcelRequest(BaseModel):
+    """DTO para preview de arquivo Excel"""
+    arquivo_base64: str = Field(..., description="Arquivo Excel em base64")
+    nome_aba: Optional[str] = Field(default=None, description="Nome da aba a ler")
+    linha_cabecalho: int = Field(default=0, ge=0, description="Índice da linha do cabeçalho")
+    linha_inicio_dados: int = Field(default=1, ge=0, description="Índice da linha de início dos dados")
+    max_linhas: int = Field(default=5, ge=1, le=20, description="Máximo de linhas de prévia")
+
+
+class PreviewExcelResponse(BaseModel):
+    """DTO de resposta para preview de Excel"""
+    abas: List[str] = Field(description="Nomes das abas disponíveis")
+    aba_selecionada: str = Field(description="Nome da aba selecionada")
+    cabecalhos: List[str] = Field(description="Cabeçalhos das colunas")
+    linhas: List[List] = Field(description="Linhas de dados (preview)")
+    total_linhas: int = Field(description="Total de linhas no arquivo")
+    total_colunas: int = Field(description="Total de colunas detectadas")

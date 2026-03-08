@@ -1,4 +1,7 @@
 """Controllers REST para API de Layouts de Importação Excel"""
+import base64
+import tempfile
+import os
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +13,8 @@ from src.adapters.inbound.rest.dto import (
     LayoutResponse,
     LayoutListResponse,
     MensagemResponse,
+    PreviewExcelRequest,
+    PreviewExcelResponse,
 )
 from src.adapters.outbound.repositories.sqlalchemy import (
     SQLAlchemyLayoutRepository,
@@ -87,6 +92,74 @@ async def campos_disponiveis():
     """Retorna campos disponíveis para mapeamento de colunas"""
     campos = get_campos_disponiveis()
     return {k: {"label": v["label"], "tipo": v["tipo"].value, "obrigatorio": v["obrigatorio"]} for k, v in campos.items()}
+
+
+@router.post("/preview-excel", response_model=PreviewExcelResponse)
+async def preview_excel(request: PreviewExcelRequest):
+    """Extrai prévia de um arquivo Excel para configuração de layout"""
+    try:
+        from python_calamine import CalamineWorkbook
+
+        arquivo_bytes = base64.b64decode(request.arquivo_base64)
+        with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as tmp:
+            tmp.write(arquivo_bytes)
+            tmp_path = tmp.name
+
+        try:
+            wb = CalamineWorkbook.from_path(tmp_path)
+            if not wb.sheet_names:
+                raise HTTPException(status_code=400, detail="Arquivo Excel sem planilhas")
+
+            aba = request.nome_aba if request.nome_aba and request.nome_aba in wb.sheet_names else wb.sheet_names[0]
+            sheet_data = wb.get_sheet_by_name(aba).to_python()
+
+            if len(sheet_data) == 0:
+                raise HTTPException(status_code=400, detail="Planilha vazia")
+
+            # Cabeçalhos
+            cabecalhos = []
+            if request.linha_cabecalho < len(sheet_data):
+                cabecalhos = [str(c) if c is not None else f"Col_{i}" for i, c in enumerate(sheet_data[request.linha_cabecalho])]
+
+            # Linhas de dados (preview)
+            inicio = request.linha_inicio_dados
+            fim = min(inicio + request.max_linhas, len(sheet_data))
+            linhas = []
+            for row in sheet_data[inicio:fim]:
+                linhas.append([_serialize_cell(c) for c in row])
+
+            total_linhas = max(0, len(sheet_data) - request.linha_inicio_dados)
+            total_colunas = len(cabecalhos) if cabecalhos else (len(sheet_data[0]) if sheet_data else 0)
+
+            return PreviewExcelResponse(
+                abas=wb.sheet_names,
+                aba_selecionada=aba,
+                cabecalhos=cabecalhos,
+                linhas=linhas,
+                total_linhas=total_linhas,
+                total_colunas=total_colunas,
+            )
+        finally:
+            os.unlink(tmp_path)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao processar arquivo: {str(e)}")
+
+
+def _serialize_cell(value):
+    """Serializa um valor de célula para JSON"""
+    if value is None:
+        return None
+    from datetime import date, datetime
+    if isinstance(value, datetime):
+        return value.strftime("%d/%m/%Y %H:%M")
+    if isinstance(value, date):
+        return value.strftime("%d/%m/%Y")
+    if isinstance(value, (int, float)):
+        return value
+    return str(value)
 
 
 @router.get("/cnpjs", response_model=list[str])
