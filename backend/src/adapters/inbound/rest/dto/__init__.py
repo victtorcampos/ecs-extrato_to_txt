@@ -35,4 +35,10 @@ from .dtos import (
     # Preview Excel DTOs
     PreviewExcelRequest,
     PreviewExcelResponse,
+    # Output Profile DTOs
+    ConfigPerfilSaidaDTO,
+    CriarPerfilSaidaRequest,
+    AtualizarPerfilSaidaRequest,
+    PerfilSaidaResponse,
+    PerfilSaidaListResponse,
 )

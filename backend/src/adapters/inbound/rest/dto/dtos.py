@@ -15,6 +15,7 @@ class CriarLoteRequest(BaseModel):
     codigo_matriz_filial: str = Field(default="", description="Código da matriz/filial")
     nome_layout: str = Field(default="padrao", description="Nome do layout a ser usado")
     layout_id: Optional[str] = Field(default=None, description="ID do layout de importação a usar")
+    perfil_saida_id: Optional[str] = Field(default=None, description="ID do perfil de saída a usar")
 
 
 class ResolverPendenciasRequest(BaseModel):
@@ -57,6 +58,7 @@ class LoteResponse(BaseModel):
     email_notificacao: str
     nome_layout: str
     layout_id: Optional[str] = None
+    perfil_saida_id: Optional[str] = None
     codigo_matriz_filial: str
     status: str
     mensagem_erro: Optional[str]
@@ -332,3 +334,61 @@ class PreviewExcelResponse(BaseModel):
     linhas: List[List] = Field(description="Linhas de dados (preview)")
     total_linhas: int = Field(description="Total de linhas no arquivo")
     total_colunas: int = Field(description="Total de colunas detectadas")
+
+
+
+# ============================================
+# DTOs para Perfis de Saída
+# ============================================
+
+class ConfigPerfilSaidaDTO(BaseModel):
+    """DTO para configuração de perfil de saída"""
+    delimitador: str = "|"
+    codificacao: str = "ANSI"
+    tipo_lancamento_padrao: str = "X"
+    codigo_usuario: str = ""
+    nome_usuario: str = ""
+    codigo_filial: str = ""
+    codigo_historico_padrao: str = "0"
+    incluir_delimitador_inicio_fim: bool = True
+
+
+class CriarPerfilSaidaRequest(BaseModel):
+    """DTO para criação de perfil de saída"""
+    nome: str = Field(..., description="Nome do perfil")
+    sistema_destino: str = Field(..., description="Sistema de destino")
+    formato: str = Field(..., description="Formato de saída")
+    config: Optional[ConfigPerfilSaidaDTO] = None
+    descricao: Optional[str] = None
+    padrao: bool = False
+
+
+class AtualizarPerfilSaidaRequest(BaseModel):
+    """DTO para atualização de perfil de saída"""
+    nome: Optional[str] = None
+    descricao: Optional[str] = None
+    config: Optional[ConfigPerfilSaidaDTO] = None
+    ativo: Optional[bool] = None
+    padrao: Optional[bool] = None
+
+
+class PerfilSaidaResponse(BaseModel):
+    """DTO de resposta para perfil de saída"""
+    id: str
+    nome: str
+    sistema_destino: str
+    sistema_destino_nome: str
+    formato: str
+    formato_nome: str
+    descricao: Optional[str]
+    padrao: bool
+    ativo: bool
+    config: dict
+    criado_em: str
+    atualizado_em: str
+
+
+class PerfilSaidaListResponse(BaseModel):
+    """DTO de resposta para lista de perfis de saída"""
+    items: List[PerfilSaidaResponse]
+    total: int

@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from src.config.database import init_db
-from src.adapters.inbound.rest.controllers import lote_router, account_mapping_router, layout_router, regra_router
+from src.adapters.inbound.rest.controllers import lote_router, account_mapping_router, layout_router, regra_router, output_profile_router
 
 
 @asynccontextmanager
@@ -44,6 +44,7 @@ app.include_router(lote_router)
 app.include_router(account_mapping_router)
 app.include_router(layout_router)
 app.include_router(regra_router)
+app.include_router(output_profile_router)
 
 
 @app.get("/api/health")

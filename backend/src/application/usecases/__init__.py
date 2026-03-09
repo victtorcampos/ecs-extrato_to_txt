@@ -29,3 +29,9 @@ from .regra_usecases import (
     TestarRegraUseCase,
     AplicarRegrasUseCase
 )
+from .output_usecases import (
+    CriarPerfilSaidaUseCase,
+    AtualizarPerfilSaidaUseCase,
+    ListarPerfisSaidaUseCase,
+    DeletarPerfilSaidaUseCase
+)

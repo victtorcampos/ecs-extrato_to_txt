@@ -35,3 +35,5 @@ async def init_db():
         columns = [row[1] for row in result.fetchall()]
         if "layout_id" not in columns:
             await conn.execute(text("ALTER TABLE lotes ADD COLUMN layout_id VARCHAR(36)"))
+        if "perfil_saida_id" not in columns:
+            await conn.execute(text("ALTER TABLE lotes ADD COLUMN perfil_saida_id VARCHAR(36)"))

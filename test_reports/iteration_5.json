@@ -1,0 +1,78 @@
+{
+  "summary": "Iteration 5 testing completed: Output Profiles (Perfis de Saída) feature fully tested. Backend: 16/16 tests passed (100%). Frontend: All UI flows working correctly including CRUD operations, sidebar navigation, and integration with Upload flow.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✅ Backend: GET /api/v1/output-profiles/sistemas-disponiveis returns sistemas and geradores_implementados",
+    "✅ Backend: Domínio Sistemas with txt_delimitado format available in sistemas",
+    "✅ Backend: TXT generator listed in geradores_implementados",
+    "✅ Backend: GET /api/v1/output-profiles returns list with items and total",
+    "✅ Backend: POST /api/v1/output-profiles creates profile with config (status 201)",
+    "✅ Backend: GET /api/v1/output-profiles/{id} returns profile with friendly names (sistema_destino_nome, formato_nome)",
+    "✅ Backend: GET /api/v1/output-profiles/{id} returns 404 for non-existent ID",
+    "✅ Backend: PUT /api/v1/output-profiles/{id} updates profile (nome, config, ativo) and persists changes",
+    "✅ Backend: DELETE /api/v1/output-profiles/{id} removes profile (verified with GET returning 404)",
+    "✅ Backend: Setting padrao=True correctly manages single default (unsets previous default)",
+    "✅ Backend: DominioSistemasTxtGenerator produces correct |0000|, |6000|, |6100| format",
+    "✅ Backend: Generator value formatting uses comma as decimal separator (500,00)",
+    "✅ Backend: Generator date formatting converts to DD/MM/YYYY",
+    "✅ Backend: Generator validation catches missing fields (CNPJ, lancamentos, conta_debito, valor)",
+    "✅ Backend: Generator applies account mappings correctly",
+    "✅ Backend: Profile ID available for lote creation with perfil_saida_id field",
+    "✅ Frontend: Sidebar navigation has 'Perfis de Saída' link",
+    "✅ Frontend: /perfis-saida page loads with correct title and profile list",
+    "✅ Frontend: Profile card shows PADRÃO badge, ATIVO status, system/format info",
+    "✅ Frontend: 'Novo Perfil' button opens inline form with all fields",
+    "✅ Frontend: Profile form shows sistema_destino, formato dropdowns from API",
+    "✅ Frontend: Profile form shows config fields (delimitador, tipo_lancamento_padrao, codigo_usuario, etc.)",
+    "✅ Frontend: Create profile shows 'Perfil criado' toast and adds to list",
+    "✅ Frontend: Edit form opens with 'Editar Perfil' title and pre-filled data",
+    "✅ Frontend: Delete profile with confirmation shows 'Perfil removido' toast",
+    "✅ Frontend: Toggle ativo/inativo works correctly",
+    "✅ Frontend: /upload page shows Step 4: 'Perfil de Saída' section",
+    "✅ Frontend: Output profile dropdown shows available profiles with '- PADRÃO' indicator",
+    "✅ Frontend: Default profile is pre-selected in dropdown"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_output_profiles.py",
+    "/app/test_reports/pytest/pytest_output_profiles.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_output_profiles.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (16/16 tests passed)",
+    "frontend": "100% (all UI flows working)"
+  },
+
+  "test_credentials": "No auth required. CNPJ for testing: 11222333000181",
+
+  "seed_data_creation": "Default profile 'Domínio Sistemas - TXT Delimitado' recreated after cleanup. ID: 22a24ee1-2672-4e32-955d-c7445c33b318",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": true,
+
+  "context_for_next_testing_agent": "Output Profiles (Perfis de Saída) feature fully tested in iteration 5. Key endpoints: GET /api/v1/output-profiles/sistemas-disponiveis (returns available systems/formats), CRUD on /api/v1/output-profiles. The DominioSistemasTxtGenerator produces TXT files with |0000|, |6000|, |6100| records format. Config fields include: delimitador, tipo_lancamento_padrao (X/D/C/V), codigo_usuario, nome_usuario, codigo_filial, codigo_historico_padrao, incluir_delimitador_inicio_fim. Upload page (Step 4) shows profile dropdown with pre-selected default.",
+
+  "mocked_apis": {
+    "email_sender": "Email sending is mocked (ResendEmailSender)"
+  }
+}

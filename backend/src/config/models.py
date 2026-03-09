@@ -17,6 +17,7 @@ class LoteModel(Base):
     email_notificacao = Column(String(255))
     nome_layout = Column(String(100))
     layout_id = Column(String(36), nullable=True)  # Referência ao layout usado
+    perfil_saida_id = Column(String(36), nullable=True)  # Referência ao perfil de saída
     codigo_matriz_filial = Column(String(50))
     
     status = Column(String(20), default="aguardando")
@@ -87,5 +88,24 @@ class RegraProcessamentoModel(Base):
     acao_json = Column(JSON, default=dict)
     acoes_extras_json = Column(JSON, default=list)
     
+    criado_em = Column(DateTime, default=datetime.now)
+    atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+
+
+class PerfilSaidaModel(Base):
+    """Modelo ORM para Perfil de Saída"""
+    __tablename__ = "perfis_saida"
+
+    id = Column(String(36), primary_key=True)
+    nome = Column(String(150))
+    sistema_destino = Column(String(50), index=True)
+    formato = Column(String(30))
+    descricao = Column(Text, nullable=True)
+    padrao = Column(Boolean, default=False)
+    ativo = Column(Boolean, default=True)
+
+    config_json = Column(JSON, default=dict)
+
     criado_em = Column(DateTime, default=datetime.now)
     atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)

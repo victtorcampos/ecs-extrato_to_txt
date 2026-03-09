@@ -27,6 +27,25 @@ class TxtGeneratorPort(ABC):
         pass
 
 
+class OutputGeneratorPort(ABC):
+    """Interface genérica para gerador de arquivo de saída (multi-formato)"""
+
+    @abstractmethod
+    def gerar(self, lancamentos: List[Lancamento], cnpj: str, mapeamentos: Dict[str, str], config: Dict[str, Any] = None) -> str:
+        """Gera arquivo de saída no formato configurado"""
+        pass
+
+    @abstractmethod
+    def validar(self, lancamentos: List[Lancamento], cnpj: str, mapeamentos: Dict[str, str], config: Dict[str, Any] = None) -> List[str]:
+        """Valida dados antes de gerar (retorna lista de erros)"""
+        pass
+
+    @abstractmethod
+    def extensao(self) -> str:
+        """Retorna a extensão do arquivo gerado"""
+        pass
+
+
 class EmailSenderPort(ABC):
     """Interface para envio de emails"""
     

@@ -1,0 +1,1 @@
+export { PerfisSaidaList } from './PerfisSaidaList';

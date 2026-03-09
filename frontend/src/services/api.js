@@ -191,3 +191,37 @@ export const regrasApi = {
     return response.data;
   },
 };
+
+
+// Perfis de Saída API
+export const perfisSaidaApi = {
+  listar: async (params = {}) => {
+    const response = await api.get('/api/v1/output-profiles', { params });
+    return response.data;
+  },
+
+  sistemasDisponiveis: async () => {
+    const response = await api.get('/api/v1/output-profiles/sistemas-disponiveis');
+    return response.data;
+  },
+
+  obter: async (id) => {
+    const response = await api.get(`/api/v1/output-profiles/${id}`);
+    return response.data;
+  },
+
+  criar: async (data) => {
+    const response = await api.post('/api/v1/output-profiles', data);
+    return response.data;
+  },
+
+  atualizar: async (id, data) => {
+    const response = await api.put(`/api/v1/output-profiles/${id}`, data);
+    return response.data;
+  },
+
+  deletar: async (id) => {
+    const response = await api.delete(`/api/v1/output-profiles/${id}`);
+    return response.data;
+  },
+};

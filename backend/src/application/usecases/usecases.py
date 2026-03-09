@@ -30,7 +30,8 @@ class CriarProtocoloUseCase:
         nome_arquivo: str,
         codigo_matriz_filial: str = "",
         nome_layout: str = "padrao",
-        layout_id: str = None
+        layout_id: str = None,
+        perfil_saida_id: str = None
     ) -> Lote:
         """Cria um novo lote com protocolo único"""
         
@@ -51,6 +52,7 @@ class CriarProtocoloUseCase:
             email_notificacao=email_vo.valor,
             nome_layout=nome_layout,
             layout_id=layout_id,
+            perfil_saida_id=perfil_saida_id,
             codigo_matriz_filial=codigo_matriz_filial,
             arquivo_original=arquivo_base64,
             nome_arquivo=nome_arquivo,

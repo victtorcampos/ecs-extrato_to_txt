@@ -10,6 +10,7 @@ import { LotesList, LoteDetail } from './components/lotes';
 import { PendenciasResolver } from './components/pendencias';
 import { MapeamentosList } from './components/mapeamentos';
 import { LayoutsList, LayoutForm, LayoutDetail } from './components/layouts';
+import { PerfisSaidaList } from './components/perfis-saida';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/layouts/novo" element={<LayoutForm />} />
           <Route path="/layouts/:id" element={<LayoutDetail />} />
           <Route path="/layouts/:id/editar" element={<LayoutForm />} />
+          <Route path="/perfis-saida" element={<PerfisSaidaList />} />
         </Routes>
       </Layout>
     </BrowserRouter>

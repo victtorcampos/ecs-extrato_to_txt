@@ -16,7 +16,7 @@ import {
   Save,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { lotesApi, layoutsApi } from '../../services/api';
+import { lotesApi, layoutsApi, perfisSaidaApi } from '../../services/api';
 
 const TIPO_DADO_OPTIONS = [
   { value: 'string', label: 'Texto' },
@@ -67,9 +67,18 @@ export const UploadForm = () => {
   const [success, setSuccess] = useState(null);
   const [dragOver, setDragOver] = useState(false);
 
-  // Load campos disponiveis once
+  // Output profiles
+  const [perfisSaida, setPerfisSaida] = useState([]);
+  const [selectedPerfilId, setSelectedPerfilId] = useState('');
+
+  // Load campos disponiveis and output profiles once
   useEffect(() => {
     layoutsApi.camposDisponiveis().then(setCamposDisponiveis).catch(() => {});
+    perfisSaidaApi.listar({ apenas_ativos: true }).then((data) => {
+      setPerfisSaida(data.items);
+      const padrao = data.items.find((p) => p.padrao);
+      if (padrao) setSelectedPerfilId(padrao.id);
+    }).catch(() => {});
   }, []);
 
   // Load existing layouts when CNPJ changes
@@ -222,6 +231,7 @@ export const UploadForm = () => {
         codigo_matriz_filial: formData.codigo_matriz_filial,
         nome_layout: 'padrao',
         layout_id: layoutId,
+        perfil_saida_id: selectedPerfilId || null,
       };
 
       const response = await lotesApi.criar(payload);
@@ -607,6 +617,27 @@ export const UploadForm = () => {
                 )}
               </div>
             )}
+          </section>
+        )}
+
+        {/* Step 4: Output Profile */}
+        {perfisSaida.length > 0 && (
+          <section className="bg-white border border-slate-200 rounded-lg p-6 space-y-3" data-testid="output-profile-section">
+            <h2 className="font-heading text-lg font-semibold text-slate-900">4. Perfil de Saída</h2>
+            <p className="text-xs text-slate-500">Formato de exportação do arquivo processado</p>
+            <select
+              value={selectedPerfilId}
+              onChange={(e) => setSelectedPerfilId(e.target.value)}
+              data-testid="output-profile-select"
+              className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-950"
+            >
+              <option value="">Usar padrão do sistema</option>
+              {perfisSaida.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nome} ({p.formato_nome}){p.padrao ? ' - PADRÃO' : ''}
+                </option>
+              ))}
+            </select>
           </section>
         )}
 

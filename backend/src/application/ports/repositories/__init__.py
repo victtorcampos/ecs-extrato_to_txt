@@ -1,2 +1,3 @@
 from .repository_ports import LoteRepositoryPort, MapeamentoContaRepositoryPort
 from .layout_repository_port import LayoutRepositoryPort, RegraRepositoryPort
+from .output_repository_port import PerfilSaidaRepositoryPort

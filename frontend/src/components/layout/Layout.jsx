@@ -6,6 +6,7 @@ import {
   FileText, 
   GitBranch,
   FileSpreadsheet,
+  FileOutput,
   Menu,
   X
 } from 'lucide-react';
@@ -17,6 +18,7 @@ const navItems = [
   { path: '/lotes', label: 'Lotes', icon: FileText },
   { path: '/mapeamentos', label: 'Mapeamentos', icon: GitBranch },
   { path: '/layouts', label: 'Layouts', icon: FileSpreadsheet },
+  { path: '/perfis-saida', label: 'Perfis de Saída', icon: FileOutput },
 ];
 
 export const Sidebar = ({ isOpen, onClose }) => {

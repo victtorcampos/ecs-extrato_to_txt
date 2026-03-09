@@ -1,2 +1,3 @@
 from .repositories import SQLAlchemyLoteRepository, SQLAlchemyMapeamentoRepository, LoteMapper
 from .layout_repository import SQLAlchemyLayoutRepository, SQLAlchemyRegraRepository
+from .output_repository import SQLAlchemyPerfilSaidaRepository
