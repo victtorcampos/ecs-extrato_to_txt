@@ -38,7 +38,10 @@ class CriarProtocoloUseCase:
         # Validar Value Objects
         cnpj_vo = CNPJ(cnpj)
         periodo_vo = PeriodoContabil(periodo_mes, periodo_ano)
-        email_vo = Email(email_notificacao)
+        email_valor = ""
+        if email_notificacao:
+            email_vo = Email(email_notificacao)
+            email_valor = email_vo.valor
         
         # Gerar protocolo único
         protocolo = f"PROT-{datetime.now().strftime('%Y%m%d%H%M%S')}-{str(uuid4())[:8].upper()}"
@@ -49,7 +52,7 @@ class CriarProtocoloUseCase:
             cnpj=cnpj_vo.numerico,
             periodo_mes=periodo_vo.mes,
             periodo_ano=periodo_vo.ano,
-            email_notificacao=email_vo.valor,
+            email_notificacao=email_valor,
             nome_layout=nome_layout,
             layout_id=layout_id,
             perfil_saida_id=perfil_saida_id,

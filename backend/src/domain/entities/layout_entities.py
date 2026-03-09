@@ -17,6 +17,13 @@ class ColunaLayout:
     formato: Optional[str] = None     # Ex: "%d/%m/%Y" para datas
     obrigatorio: bool = False
     valor_padrao: Optional[str] = None
+    transformacao: Dict[str, Any] = field(default_factory=dict)
+    # transformacao pode conter:
+    #   formato_numero: "automatico"|"br_virgula"|"br_moeda"|"us_ponto"
+    #   valor_com_dc: "nenhum"|"sufixo"|"prefixo"
+    #   campo_composto: "nenhum"|"cnpj_cpf_nome"
+    #   separador_composto: " - " (string para separar campos compostos)
+    #   sinal_valor: "positivo_debito"|"positivo_credito"
     
     def to_dict(self) -> dict:
         return {
@@ -26,7 +33,8 @@ class ColunaLayout:
             "tipo_dado": self.tipo_dado.value if isinstance(self.tipo_dado, TipoDado) else self.tipo_dado,
             "formato": self.formato,
             "obrigatorio": self.obrigatorio,
-            "valor_padrao": self.valor_padrao
+            "valor_padrao": self.valor_padrao,
+            "transformacao": self.transformacao
         }
     
     @staticmethod
@@ -38,7 +46,8 @@ class ColunaLayout:
             tipo_dado=TipoDado(data.get("tipo_dado", "string")),
             formato=data.get("formato"),
             obrigatorio=data.get("obrigatorio", False),
-            valor_padrao=data.get("valor_padrao")
+            valor_padrao=data.get("valor_padrao"),
+            transformacao=data.get("transformacao", {})
         )
 
 

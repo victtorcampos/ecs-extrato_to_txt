@@ -35,7 +35,6 @@ export const UploadForm = () => {
     periodo_mes: new Date().getMonth() + 1,
     periodo_ano: new Date().getFullYear(),
     email_notificacao: '',
-    codigo_matriz_filial: '',
   });
 
   // File state
@@ -174,8 +173,8 @@ export const UploadForm = () => {
       return;
     }
     const cnpjClean = formData.cnpj.replace(/\D/g, '');
-    if (!cnpjClean || !formData.email_notificacao) {
-      setError('Preencha todos os campos obrigatórios');
+    if (!cnpjClean) {
+      setError('Preencha o CNPJ');
       return;
     }
 
@@ -225,10 +224,9 @@ export const UploadForm = () => {
         cnpj: cnpjClean,
         periodo_mes: parseInt(formData.periodo_mes),
         periodo_ano: parseInt(formData.periodo_ano),
-        email_notificacao: formData.email_notificacao,
+        email_notificacao: formData.email_notificacao || null,
         arquivo_base64: fileBase64,
         nome_arquivo: file.name,
-        codigo_matriz_filial: formData.codigo_matriz_filial,
         nome_layout: 'padrao',
         layout_id: layoutId,
         perfil_saida_id: selectedPerfilId || null,
@@ -340,11 +338,11 @@ export const UploadForm = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email Notificação *</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Email Notificação</label>
               <input
                 name="email_notificacao"
                 type="email"
-                placeholder="email@exemplo.com"
+                placeholder="email@exemplo.com (opcional)"
                 value={formData.email_notificacao}
                 onChange={(e) => setFormData({ ...formData, email_notificacao: e.target.value })}
                 data-testid="email-input"
@@ -352,7 +350,7 @@ export const UploadForm = () => {
               />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Mês *</label>
               <select
@@ -374,16 +372,6 @@ export const UploadForm = () => {
                 onChange={(e) => setFormData({ ...formData, periodo_ano: e.target.value })}
                 data-testid="ano-input"
                 className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Cód. Matriz/Filial</label>
-              <input
-                value={formData.codigo_matriz_filial}
-                onChange={(e) => setFormData({ ...formData, codigo_matriz_filial: e.target.value })}
-                placeholder="Opcional"
-                data-testid="matriz-input"
-                className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2"
               />
             </div>
           </div>

@@ -9,7 +9,7 @@ class CriarLoteRequest(BaseModel):
     cnpj: str = Field(..., description="CNPJ da empresa (14 dígitos)")
     periodo_mes: int = Field(..., ge=1, le=12, description="Mês do período contábil")
     periodo_ano: int = Field(..., ge=2000, le=2100, description="Ano do período contábil")
-    email_notificacao: EmailStr = Field(..., description="Email para notificação")
+    email_notificacao: Optional[str] = Field(default=None, description="Email para notificação (opcional)")
     arquivo_base64: str = Field(..., description="Arquivo Excel em base64")
     nome_arquivo: str = Field(..., description="Nome do arquivo original")
     codigo_matriz_filial: str = Field(default="", description="Código da matriz/filial")
@@ -154,6 +154,7 @@ class ColunaLayoutDTO(BaseModel):
     formato: Optional[str] = None
     obrigatorio: bool = False
     valor_padrao: Optional[str] = None
+    transformacao: Dict = Field(default_factory=dict, description="Configuração de transformação: formato_numero, valor_com_dc, campo_composto, separador_composto, sinal_valor")
 
 
 class ConfigPlanilhaDTO(BaseModel):

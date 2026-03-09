@@ -1,73 +1,62 @@
 <analysis>**original_problem_statement:**
-O usuário solicitou a criação de um backend para um sistema de processamento de lotes contábeis, seguindo os princípios de Clean Architecture (Arquitetura Hexagonal).
-
-**PRODUCT REQUIREMENTS:**
-1.  **Core Functionality:**
-    *   Fazer upload de arquivos Excel (lotes contábeis) via API.
-    *   Processar os lotes de forma assíncrona.
-    *   Validar dados, como o período contábil.
-    *   Mapear contas contábeis do cliente para contas padrão, tratando pendências.
-    *   Permitir a resolução de pendências de mapeamento.
-    *   Gerar um arquivo de saída no formato TXT após o processamento bem-sucedido.
-    *   Permitir a consulta e exclusão de lotes.
-2.  **Architecture:**
-    *   Backend em Python com FastAPI, seguindo rigorosamente a Clean Architecture.
-    *   Frontend em React (SPA).
-    *   API exposta em .
-    *   O backend deve servir a aplicação React.
-3.  **Additional Features Requested:**
-    *   **CRUD de Mapeamento de Contas:** Implementar uma interface no frontend e endpoints no backend para gerenciar os mapeamentos de contas contábeis, incluindo edição em lote.
-    *   **Layouts de Importação e Regras:** Criar um sistema dinâmico para que o usuário possa definir diferentes layouts de importação de arquivos Excel e criar regras de transformação/validação para os dados extraídos.
-    *   **Manual de Instruções:** Criar um arquivo  para guiar a instalação e execução do projeto em um ambiente Windows.
+O usuário iniciou com a solicitação de um backend para um sistema de processamento de lotes contábeis usando Clean Architecture (Arquitetura Hexagonal). Ao longo do tempo, os requisitos evoluíram para incluir:
+1.  **Funcionalidade Core:** Upload de arquivos Excel, processamento assíncrono, validação, mapeamento de contas, resolução de pendências e geração de arquivos de saída em TXT.
+2.  **CRUD de Mapeamento de Contas:** Uma interface completa para gerenciar os mapeamentos de contas.
+3.  **Layouts de Importação Dinâmicos:** Um sistema para que o usuário final possa configurar como diferentes formatos de Excel devem ser lidos e processados, incluindo regras de validação.
+4.  **Melhoria no Fluxo de Upload:** Capacidade de visualizar uma prévia do Excel e criar um novo layout de importação diretamente na tela de upload.
+5.  **Perfis de Saída Flexíveis:** Um sistema para definir múltiplos formatos de arquivo de saída (ex: Domínio Sistemas, JSON, XML).
+6.  **Transformação Avançada de Dados:** Funcionalidades robustas para transformar dados durante a importação, como concatenar colunas, extrair valores com expressões regulares (Regex), e lidar com múltiplos formatos de número e identificadores (CPF/CNPJ).
+7.  **Manual de Instruções:** Um arquivo  para configuração local.
 
 **User's preferred language**: Portuguese (pt-BR). The next agent MUST respond in Portuguese.
 
 **what currently exists?**
-Uma aplicação full-stack (FastAPI + React) totalmente funcional, construída do zero seguindo a Clean Architecture. O sistema suporta o upload e processamento de lotes contábeis, possui um dashboard para visualização, e uma tela dedicada para o gerenciamento (CRUD) de mapeamentos de contas, incluindo filtros e edição em lote. Um  foi criado e atualizado para auxiliar na configuração local do projeto.
+Uma aplicação full-stack (FastAPI + React) funcional, construída seguindo rigorosamente a Clean Architecture. O sistema suporta:
+-   Upload e processamento de lotes contábeis.
+-   Dashboard para visualização de lotes.
+-   Gerenciamento completo (CRUD) de Mapeamentos de Contas.
+-   Gerenciamento completo (CRUD) de Layouts de Importação.
+-   Gerenciamento completo (CRUD) de Perfis de Saída, com uma implementação para Domínio Sistemas.
+-   Um fluxo de upload aprimorado com pré-visualização do arquivo e criação de layout on-the-fly.
+-   Foram implementadas as bases (modelos de dados e DTOs) para a feature de Transformação Avançada de Dados, mas a lógica de processamento e a UI final ainda não foram concluídas.
 
 **Last working item**:
--   **Last item agent was working:** O agente estava no meio da implementação da funcionalidade de **Layouts de Importação de Excel e Regras de Processamento**. A proposta detalhada foi aprovada pelo usuário. O agente já havia criado as camadas de  e  (entidades, VOs, exceções, portas e casos de uso) e estava iniciando a camada de  no backend. Especificamente, havia acabado de criar os arquivos para os repositórios SQLAlchemy.
+-   **Last item agent was working:** O agente estava implementando a feature de **Transformação Avançada de Dados e Melhorias no Upload**. Esta feature visa aumentar drasticamente a flexibilidade do sistema para ler arquivos Excel complexos. O agente já havia modificado as camadas de domínio e DTOs no backend e estava no meio da atualização da interface do frontend.
 -   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** backend testing agent
+-   **Which testing method agent to use?** both
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-Nenhum bug ou problema pendente foi identificado. O trabalho atual é a continuação de uma nova feature.
+Nenhum. O trabalho atual é a continuação de uma nova feature.
 
 **In progress Task List**:
--   **Task 1: Concluir a implementação da funcionalidade Layouts de Importação e Regras (P0)**
-    -   **Where to resume:** O agente deve continuar a implementação na camada de  do backend. A sequência é:
-        1.  Implementar os repositórios SQLAlchemy recém-criados:  e .
-        2.  Implementar o  e o  na camada de adaptadores de saída ().
-        3.  Criar os DTOs (, ) e os Controllers (, ) na camada de adaptadores de entrada ().
-        4.  Atualizar o arquivo de injeção de dependência ().
-        5.  Registrar os novos roteadores no .
-        6.  Testar os novos endpoints do backend via .
-        7.  Após o backend, implementar a interface do frontend conforme a proposta (listas, formulários, builder de regras).
-    -   **What will be achieved with this?** O sistema se tornará flexível, permitindo que os usuários configurem como diferentes formatos de arquivos Excel devem ser lidos e como os dados devem ser transformados e validados automaticamente, eliminando a necessidade de código hardcoded.
+-   **Task 1: Concluir a implementação da feature Transformação Avançada de Dados e Melhorias no Upload (P0)**
+    -   **Where to resume:** A implementação está incompleta e precisa ser continuada em duas frentes:
+        1.  **Backend:** Implementar a lógica de processamento para as transformações. O agente adicionou os enums () e campos nos modelos, mas a lógica que efetivamente aplica , ,  etc., durante a leitura do arquivo (provavelmente em um adaptador como  ou um novo ) ainda precisa ser criada.
+        2.  **Frontend:** Finalizar a UI. O agente começou a modificar o  para remover o campo Cód. Matriz/Filial e tornar o e-mail opcional. O próximo passo é adicionar a interface que permite ao usuário configurar as transformações para cada coluna mapeada (provavelmente um modal ou pop-up que é acionado por um botão de configurações avançadas ao lado de cada mapeamento de coluna). Essa mesma UI deve ser replicada no .
+    -   **What will be achieved with this?** O sistema será capaz de processar uma variedade muito maior de formatos de arquivo Excel sem a necessidade de alterações no código, atendendo aos exemplos complexos fornecidos pelo usuário.
     -   **Status:** IN PROGRESS
     -   **Should Test frontend/backend/both after fix?** both
 
 **Upcoming and Future Tasks**
--   **Upcoming Tasks (Fases 2 e 3 da feature atual):**
-    -   **P1:** Implementar o frontend para a criação e gerenciamento de Layouts e Regras.
-    -   **P1:** Implementar o motor de regras () para suportar regras de  e .
+-   **Upcoming Tasks:**
+    -   **P1:** Implementar o motor de regras () para suportar regras de  e , que foi uma parte da proposta original de Layouts e Regras que ainda não foi abordada.
     -   **P2:** Criar um construtor visual de regras no frontend ().
-    -   **P2:** Implementar a funcionalidade de preview do parsing com base em um layout e um arquivo de exemplo.
-    -   **P2:** Implementar a clonagem de layouts.
+    -   **P2:** Implementar a clonagem de layouts de importação para agilizar a criação de novos.
 -   **Future Tasks:**
-    -   **P2:** Migrar o processamento assíncrono de  do FastAPI para uma solução mais robusta como Celery/Redis, conforme sugerido na conversa inicial.
-    -   **P2:** Concluir a integração real de envio de e-mails (ex: Resend), solicitando a chave de API ao usuário.
+    -   **P2:** Migrar o processamento assíncrono de  para uma solução mais robusta como Celery/Redis.
+    -   **P2:** Concluir a integração de um serviço real de envio de e-mails (ex: Resend).
+    -   **P3:** Adicionar suporte a mais formatos de saída (JSON, XML), expandindo a feature de Perfis de Saída.
 
 **Completed work in this session**
--   Arquitetura e implementação inicial completa da aplicação full-stack (Backend Contábil + Frontend React) seguindo Clean Architecture.
--   Funcionalidade de upload de lotes ().
--   Funcionalidade de CRUD para Mapeamento de Contas (), incluindo interface frontend com filtros e edição em lote.
--   Criação e atualização de um  para configuração local.
--   Correção de erros de  no frontend.
--   Elaboração e aprovação de uma proposta detalhada para a feature de Layouts e Regras.
--   Início da implementação da feature Layouts e Regras (camadas de Domínio e Aplicação do backend concluídas).
+-   Funcionalidade completa de **Layouts de Importação e Regras** (Backend e Frontend).
+-   Funcionalidade completa de **Perfis de Saída** (Backend e Frontend), com a primeira implementação para Domínio Sistemas TXT.
+-   **Fluxo de Upload Aprimorado**, com pré-visualização de Excel e criação de layout na mesma tela.
+-   **Correção de Bug Crítico:** Adicionada a coluna  na tabela  através de uma migração de banco de dados.
+-   **Melhoria na Configuração de Débito/Crédito**, permitindo colunas separadas ou mapeamento de valores em uma única coluna.
+-   Atualização constante do arquivo  após a conclusão de cada feature.
+-   Todas as features concluídas foram validadas com sucesso pelo .
 
 **Earlier issues found/mentioned but not fixed**
 -   None.
@@ -79,78 +68,79 @@ Nenhum bug ou problema pendente foi identificado. O trabalho atual é a continua
 
 
 **Key Technical Concepts**
--   **Backend:** Python, FastAPI, Clean Architecture, SQLAlchemy (async), aiosqlite, Pydantic.
--   **Frontend:** React, TailwindCSS, Axios.
--   **Database:** SQLite.
--   **Design Pattern:** Ports and Adapters (Hexagonal Architecture).
--   **Async:** FastAPI .
+-   **Backend:** Python, FastAPI, Clean Architecture (Arquitetura Hexagonal), SQLAlchemy (async), Pydantic.
+-   **Frontend:** React, TailwindCSS, Shadcn/UI, Axios, React Router.
+-   **Database:** SQLite com migrações via Alembic.
+-   **Async:** FastAPI  (com plano de migração para Celery).
 
 **key DB schema**
--   **lotes**: Armazena informações dos lotes processados (protocolo, cnpj, status, etc.).
--   **lancamentos**: Armazena os lançamentos contábeis individuais de cada lote.
--   **mapeamentos_contas**: Tabela para o mapeamento de contas do cliente para contas padrão.
--   **layouts_excel (New, In-Progress)**: Armazenará as configurações dos layouts de importação.
--   **regras_processamento (New, In-Progress)**: Armazenará as regras de transformação associadas a cada layout.
+-   **lotes**: Armazena metadados dos lotes (protocolo, cnpj, status, , ).
+-   **lancamentos**: Armazena os lançamentos contábeis individuais.
+-   **mapeamentos_contas**: Mapeamento de contas do cliente para contas padrão.
+-   **layouts_excel**: Configurações dos layouts de importação, incluindo mapeamento de colunas e transformações.
+-   **regras_processamento**: Regras associadas a um layout (feature a ser concluída).
+-   **perfis_saida**: Configurações dos formatos de arquivo de saída.
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   **/app/backend/src/**: Todo o código-fonte do backend, organizado por camadas da Clean Architecture.
+-   **/app/backend/src/**: Todo o código-fonte do backend.
 -   **/app/frontend/src/**: Todo o código-fonte do frontend.
--   **/app/PRD.md**: Documento que descreve os requisitos e o que já foi implementado.
--   **/app/manual.md**: Guia de configuração e uso local do projeto.
--   **Proposal in Chat History:** A proposta detalhada para Layouts e Regras (Chat Message 264) é o guia principal para a tarefa atual.
+-   **/app/PRD.md**: Requisitos do produto e log de funcionalidades implementadas.
+-   **/app/manual.md**: Guia de configuração local.
+-   **Artefatos do usuário:**  e  (contêm especificações para layouts de saída).
 
 **Areas that need refactoring**:
--   None. The current architecture is clean and scalable.
+-   A lógica de parsing no backend ( ou similar) precisará de uma refatoração/expansão significativa para incorporar o motor de transformações (, , etc.).
 
 **key api endpoints**
--   : Gerenciamento de lotes.
--   : CRUD de mapeamentos de contas.
--   : Atualização em lote de mapeamentos.
--    (In-Progress): CRUD para layouts de importação.
--    (In-Progress): CRUD para regras de processamento.
+-   : Upload de novos lotes.
+-   : Listagem de lotes.
+-   : CRUD de Mapeamento de Contas.
+-   : CRUD de Layouts de Importação.
+-   : Endpoint para gerar pré-visualização de arquivos Excel.
+-   : CRUD de Perfis de Saída.
 
 **Critical Info for New Agent**
--   Aderência estrita à Clean Architecture é um requisito fundamental do projeto. Qualquer nova implementação deve seguir a separação de camadas (Domain, Application, Adapters).
--   A tarefa atual é continuar a implementação da feature Layouts e Regras com base na proposta detalhada e aprovada pelo usuário no chat. O trabalho deve ser retomado a partir da camada de  do backend.
--   O usuário interage em português e espera respostas no mesmo idioma.
+-   Aderência estrita à Clean Architecture é o requisito mais importante do projeto. Novas implementações devem respeitar a separação de camadas.
+-   A tarefa atual, e de maior prioridade, é **finalizar a feature de Transformação Avançada de Dados**. Isso envolve trabalho tanto no backend (implementar a lógica de processamento) quanto no frontend (finalizar a UI para configuração das transformações).
+-   O usuário interage exclusivamente em português.
 
 **documents and test reports created in this job**
 -   
 -   
--   
--   
+-   Múltiplos relatórios de teste em 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Autorizou a implementação da proposta de Layouts e Regras. *(Status: In Progress)*
-2.  **User:** Solicitou uma proposta de implementação para Layouts de importação de Excel e Regras/Filtros. *(Status: Completed, proposal provided and approved)*
-3.  **User:** Solicitou a funcionalidade de gerenciar mapeamentos de contas (CRUD). *(Status: Completed)*
-4.  **User:** Reportou um erro de  no frontend. *(Status: Completed, fixed)*
-5.  **User:** Pediu a criação de um arquivo  para execução local. *(Status: Completed)*
-6.  **User:** Forneceu o arquivo  como exemplo de saída. *(Status: Completed)*
-7.  **User:** Forneceu o arquivo  como exemplo de entrada. *(Status: Completed)*
-8.  **User:** Respondeu às perguntas iniciais do agente para definir o escopo. *(Status: Completed)*
-9.  **User:** Enviou o problema inicial. *(Status: Completed)*
-10. **User:** Pediu para iniciar a tarefa. *(Status: Completed)*
+1.  **User:** Aprovou o plano para implementar as transformações avançadas. *(Status: In Progress)*
+2.  **User:** Solicitou a feature de transformações avançadas e melhorias na tela de upload. *(Status: Completed - Proposta Aprovada)*
+3.  **User:** Aprovou o plano para a feature de Perfis de Saída. *(Status: Completed)*
+4.  **User:** Solicitou a feature de Perfis de Saída, fornecendo documentos de especificação. *(Status: Completed - Proposta Aprovada)*
+5.  **User:** Aprovou o plano para o novo fluxo de upload. *(Status: Completed)*
+6.  **User:** Solicitou a melhoria no fluxo de upload com criação de layout on-the-fly. *(Status: Completed - Proposta Aprovada)*
+7.  **User:** Aprovou o plano para corrigir o bug do  e melhorar a lógica de D/C. *(Status: Completed)*
+8.  **User:** Reportou o bug da coluna  e solicitou melhorias na importação. *(Status: Completed)*
+9.  **User:** Aprovou a proposta para a feature Layouts e Regras. *(Status: Completed)*
+10. **User:** sim. *(Status: Actioned)*
 
 **Project Health Check:**
--   **Broken:** Nada. A última versão estável (com a feature de Mapeamentos) foi testada e funciona.
--   **Mocked:** O serviço de envio de e-mail () é um mock. O usuário pediu uma integração real, que é uma tarefa futura pendente.
+-   **Broken:** A funcionalidade de Transformação Avançada de Dados está no meio da implementação. O upload de arquivos pode não funcionar como esperado até que esta feature seja concluída e testada.
+-   **Mocked:** O serviço de envio de e-mail () continua sendo um mock.
 
 **3rd Party Integrations**
--   **python-calamine:** Para leitura de arquivos Excel.
--   **fastapi-mail:** Usado para a estrutura de envio de e-mail (atualmente mockado). O agente pesquisou  como uma opção de integração real.
--   **SQLAlchemy / aiosqlite:** Para acesso ao banco de dados.
+-   **python-calamine:** Leitura de arquivos  e .
+-   **fastapi-mail:** Usado para a estrutura mockada de envio de e-mail.
+-   **SQLAlchemy / aiosqlite:** Acesso ao banco de dados.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES (Após a feature de Mapeamentos).
--   **Test files created:** , .
+-   **Testing agent used after significant changes:** YES (para todas as features concluídas anteriormente).
+-   **Test files created:** Sim, vários em .
 -   **Known regressions:** None.
 
 **Credentials to test flow:**
-Nenhuma credencial de usuário é necessária, pois o sistema não possui autenticação.
+-   Nenhuma credencial é necessária.
 
 **What agent forgot to execute**
--   O agente não solicitou ao usuário as credenciais para a integração real de e-mail (ex: chave de API do Resend), apesar de o usuário ter optado por isso no início. Essa é uma pendência para quando a tarefa de e-mail for priorizada.</analysis>
+-   O agente anterior não implementou a parte mais crítica da última solicitação do usuário: a **lógica do backend** para processar as transformações de dados (, , etc.). Ele preparou os modelos de dados, mas a funcionalidade em si está ausente.
+-   A interface do usuário para configurar essas transformações também foi apenas iniciada e não está funcional.</analysis>

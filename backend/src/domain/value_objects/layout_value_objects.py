@@ -21,6 +21,33 @@ class TipoSinal(str, Enum):
     FIXO_CREDITO = "fixo_credito"          # Sempre crédito
 
 
+class FormatoNumero(str, Enum):
+    """Como interpretar valores numéricos"""
+    AUTOMATICO = "automatico"     # Detecta formato automaticamente
+    BR_VIRGULA = "br_virgula"     # 1.234,56 ou 1234,56
+    BR_MOEDA = "br_moeda"         # R$ 1.234,56
+    US_PONTO = "us_ponto"         # 1,234.56
+
+
+class ModoValorDC(str, Enum):
+    """Como extrair D/C de valores com indicador embutido"""
+    NENHUM = "nenhum"             # Valor puro, sem D/C embutido
+    SUFIXO = "sufixo"             # "356,12 D" — D/C no final
+    PREFIXO = "prefixo"          # "D 356,12" — D/C no início
+
+
+class TipoCampoComposto(str, Enum):
+    """Tipos de campos compostos que precisam ser parseados"""
+    NENHUM = "nenhum"
+    CNPJ_CPF_NOME = "cnpj_cpf_nome"   # "25789456000196 - EMPRESA LTDA"
+
+
+class SinalValor(str, Enum):
+    """Semântica do sinal do valor"""
+    POSITIVO_DEBITO = "positivo_debito"     # + = débito, - = crédito
+    POSITIVO_CREDITO = "positivo_credito"   # + = crédito, - = débito
+
+
 class TipoRegra(str, Enum):
     """Tipos de regras de processamento"""
     FILTRO = "filtro"                # Excluir linhas
@@ -76,6 +103,7 @@ CAMPOS_DESTINO = {
     
     # Tipo D/C
     "tipo_lancamento": {"label": "Tipo (D/C)", "tipo": TipoDado.STRING, "obrigatorio": False},
+    "valor_debito_credito": {"label": "Valor com D/C embutido", "tipo": TipoDado.STRING, "obrigatorio": False},
     
     # Histórico
     "historico": {"label": "Histórico", "tipo": TipoDado.STRING, "obrigatorio": False},
@@ -83,7 +111,16 @@ CAMPOS_DESTINO = {
     
     # Documento
     "documento": {"label": "Documento", "tipo": TipoDado.STRING, "obrigatorio": False},
+    "documento_fiscal": {"label": "Documento Fiscal", "tipo": TipoDado.STRING, "obrigatorio": False},
+    "documento_pagamento": {"label": "Documento Pagamento", "tipo": TipoDado.STRING, "obrigatorio": False},
     "tipo_documento": {"label": "Tipo Documento", "tipo": TipoDado.STRING, "obrigatorio": False},
+    
+    # Terceiro (fornecedor/cliente)
+    "cnpj_cpf_terceiro": {"label": "CNPJ/CPF Terceiro", "tipo": TipoDado.STRING, "obrigatorio": False},
+    "cpf_terceiro": {"label": "CPF Terceiro", "tipo": TipoDado.STRING, "obrigatorio": False},
+    "cnpj_terceiro": {"label": "CNPJ Terceiro", "tipo": TipoDado.STRING, "obrigatorio": False},
+    "razao_social_terceiro": {"label": "Razão Social / Nome", "tipo": TipoDado.STRING, "obrigatorio": False},
+    "cnpj_cpf_e_nome": {"label": "CNPJ/CPF + Nome (composto)", "tipo": TipoDado.STRING, "obrigatorio": False},
     
     # Empresa
     "nome_empresa": {"label": "Nome Empresa", "tipo": TipoDado.STRING, "obrigatorio": False},
@@ -92,6 +129,13 @@ CAMPOS_DESTINO = {
     "centro_custo": {"label": "Centro de Custo", "tipo": TipoDado.STRING, "obrigatorio": False},
     "fantasia": {"label": "Nome Fantasia", "tipo": TipoDado.STRING, "obrigatorio": False},
     "fato_contabil": {"label": "Fato Contábil", "tipo": TipoDado.STRING, "obrigatorio": False},
+    "transacao": {"label": "Transação", "tipo": TipoDado.STRING, "obrigatorio": False},
+    "classificacao_conta": {"label": "Classificação Conta", "tipo": TipoDado.STRING, "obrigatorio": False},
+    
+    # Saldo
+    "saldo": {"label": "Saldo", "tipo": TipoDado.DECIMAL, "obrigatorio": False},
+    "saldo_inicial": {"label": "Saldo Inicial", "tipo": TipoDado.DECIMAL, "obrigatorio": False},
+    "codigo_sequencial": {"label": "Código Sequencial", "tipo": TipoDado.STRING, "obrigatorio": False},
     
     # Banco
     "codigo_banco": {"label": "Código Banco", "tipo": TipoDado.STRING, "obrigatorio": False},
