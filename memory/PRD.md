@@ -43,6 +43,7 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - [x] **Layouts de Importação Excel** (2026-03-08)
 - [x] **Regras de Processamento** (2026-03-08)
 - [x] **Upload com Preview Excel e Layout Inline** (2026-03-08)
+- [x] **Múltiplos Perfis de Saída (TXT, XML, JSON)** (2026-03-09)
 
 ## O que foi implementado
 
@@ -113,6 +114,25 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - **Novo Layout inline**: Config de planilha (aba, linhas) + mapeamento visual de colunas com amostras
 - **Endpoint novo**: `POST /api/v1/import-layouts/preview-excel` (extrai abas, cabeçalhos, dados)
 
+### Backend - Perfis de Saída (2026-03-09)
+- **Entidade Domain**: `PerfilSaida` (nome, sistema_destino, formato, config, padrao)
+- **Value Objects**: `FormatoSaida` (TXT_DELIMITADO, XML_XSD, JSON_SCHEMA), `SistemaDestino` (DOMINIO_SISTEMAS)
+- **Config flexível**: delimitador, codificação, tipo_lancamento_padrao (X/D/C/V), codigo_usuario, nome_usuario, codigo_filial, codigo_historico_padrao
+- **OutputGeneratorPort**: Interface genérica para geradores de saída (gerar, validar, extensao)
+- **DominioSistemasTxtGenerator**: Implementação fiel ao contrato Domínio Sistemas:
+  - Registro 0000: `|0000|{cnpj}|` (identificação empresa)
+  - Registro 6000: `|6000|{tipo}|{cod_padrao}|{localizador}|{rtt}|` (cabeçalho lançamento)
+  - Registro 6100: `|6100|{data}|{conta_deb}|{conta_cred}|{valor,00}|{cod_hist}|{historico}|{usuario}|{cod_filial}|{scp}|` (detalhe)
+  - Valor formatado com vírgula (500,00), data DD/MM/AAAA
+- **OutputGeneratorFactory**: Factory pattern para selecionar gerador correto por sistema+formato
+- **CRUD API**: `/api/v1/output-profiles` (CRUD completo + sistemas-disponiveis)
+
+### Frontend - Perfis de Saída (2026-03-09)
+- **Nova página**: `/perfis-saida` (lista com badges PADRÃO/ATIVO, form inline CRUD)
+- **Config visual**: Campos de configuração do formato (delimitador, tipo lançamento, usuário, filial, etc.)
+- **Upload integrado**: Step 4 no upload com dropdown de perfil de saída (pré-selecionado padrão)
+- **Navegação**: Link "Perfis de Saída" com ícone FileOutput no sidebar
+
 ## Backlog (P0/P1/P2)
 
 ### P0 - Crítico
@@ -121,8 +141,12 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - [x] Layouts de Importação + Regras de Processamento
 - [x] Bug: coluna layout_id faltando na tabela lotes (migração SQLite)
 - [x] Upload com Preview Excel, Seleção/Criação de Layout Inline
+- [x] Múltiplos Perfis de Saída + Gerador Domínio Sistemas TXT
 
 ### P1 - Importante
+- [ ] Integrar o gerador de saída no ProcessarLoteUseCase (usar perfil_saida_id do lote)
+- [ ] Implementar geradores XML e JSON para Domínio Sistemas
+- [ ] Adicionar mais sistemas de destino (configuráveis pelo usuário)
 - [ ] Frontend: Construtor visual de regras aprimorado (RegraBuilder.jsx)
 - [ ] Backend: Preview de parsing com layout + arquivo de exemplo
 - [ ] Backend: Integrar layouts/regras no fluxo de processamento de lotes existente
@@ -183,3 +207,13 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 | PUT | .../rules/{id} | Atualizar regra |
 | PUT | .../rules/reorder | Reordenar regras |
 | DELETE | .../rules/{id} | Excluir regra |
+
+### Output Profiles (/api/v1/output-profiles)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | /api/v1/output-profiles | Listar perfis |
+| GET | /api/v1/output-profiles/sistemas-disponiveis | Sistemas e formatos disponíveis |
+| GET | /api/v1/output-profiles/{id} | Obter perfil |
+| POST | /api/v1/output-profiles | Criar perfil |
+| PUT | /api/v1/output-profiles/{id} | Atualizar perfil |
+| DELETE | /api/v1/output-profiles/{id} | Excluir perfil |
