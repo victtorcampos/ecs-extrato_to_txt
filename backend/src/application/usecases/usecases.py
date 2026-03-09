@@ -11,6 +11,7 @@ from src.domain.exceptions import (
     PendenciasMapeamentoError
 )
 from src.application.ports.repositories import LoteRepositoryPort, MapeamentoContaRepositoryPort
+from src.application.ports.repositories.layout_repository_port import LayoutRepositoryPort
 from src.application.ports.services import ExcelParserPort, TxtGeneratorPort, EmailSenderPort
 
 
@@ -75,13 +76,17 @@ class ProcessarLoteUseCase:
         mapeamento_repository: MapeamentoContaRepositoryPort,
         excel_parser: ExcelParserPort,
         txt_generator: TxtGeneratorPort,
-        email_sender: EmailSenderPort
+        email_sender: EmailSenderPort,
+        layout_repository: LayoutRepositoryPort = None,
+        dynamic_parser=None,
     ):
         self.lote_repository = lote_repository
         self.mapeamento_repository = mapeamento_repository
         self.excel_parser = excel_parser
         self.txt_generator = txt_generator
         self.email_sender = email_sender
+        self.layout_repository = layout_repository
+        self.dynamic_parser = dynamic_parser
     
     async def executar(self, lote_id: str) -> Lote:
         """Processa um lote existente"""
@@ -97,13 +102,13 @@ class ProcessarLoteUseCase:
             lote.atualizado_em = datetime.now()
             await self.lote_repository.atualizar(lote)
             
-            # Parse do Excel
-            lancamentos = self.excel_parser.parse(lote.arquivo_original, lote.nome_layout)
+            # Parse do Excel - usar parser dinâmico se layout_id disponível
+            lancamentos = await self._parse_excel(lote)
             
             # Validar período
             lancamentos_fora = []
             for lanc in lancamentos:
-                if not lanc.esta_no_periodo(lote.periodo_mes, lote.periodo_ano):
+                if lanc.data and not lanc.esta_no_periodo(lote.periodo_mes, lote.periodo_ano):
                     lancamentos_fora.append(lanc)
             
             if lancamentos_fora:
@@ -155,17 +160,18 @@ class ProcessarLoteUseCase:
             
             # Enviar email de notificação
             try:
-                await self.email_sender.enviar(
-                    destinatario=lote.email_notificacao,
-                    assunto=f"Lote {lote.protocolo} Processado com Sucesso",
-                    corpo_html=f"""
-                    <h2>Processamento Concluído</h2>
-                    <p>O lote <strong>{lote.protocolo}</strong> foi processado com sucesso.</p>
-                    <p>Total de lançamentos: {lote.total_lancamentos}</p>
-                    <p>Valor total: R$ {lote.valor_total:,.2f}</p>
-                    <p>Acesse o sistema para baixar o arquivo gerado.</p>
-                    """
-                )
+                if lote.email_notificacao:
+                    await self.email_sender.enviar(
+                        destinatario=lote.email_notificacao,
+                        assunto=f"Lote {lote.protocolo} Processado com Sucesso",
+                        corpo_html=f"""
+                        <h2>Processamento Concluído</h2>
+                        <p>O lote <strong>{lote.protocolo}</strong> foi processado com sucesso.</p>
+                        <p>Total de lançamentos: {lote.total_lancamentos}</p>
+                        <p>Valor total: R$ {lote.valor_total:,.2f}</p>
+                        <p>Acesse o sistema para baixar o arquivo gerado.</p>
+                        """
+                    )
             except Exception:
                 pass  # Não falhar se email não enviar
             
@@ -183,6 +189,15 @@ class ProcessarLoteUseCase:
             lote.atualizado_em = datetime.now()
             await self.lote_repository.atualizar(lote)
             raise
+
+    async def _parse_excel(self, lote: Lote) -> List[Lancamento]:
+        """Parse Excel usando parser dinâmico (se layout disponível) ou parser padrão"""
+        if lote.layout_id and self.layout_repository and self.dynamic_parser:
+            layout = await self.layout_repository.buscar_por_id(lote.layout_id)
+            if layout and layout.colunas:
+                return self.dynamic_parser.parse(lote.arquivo_original, layout)
+        # Fallback: parser padrão hardcoded
+        return self.excel_parser.parse(lote.arquivo_original, lote.nome_layout)
 
 
 class ResolverPendenciaUseCase:

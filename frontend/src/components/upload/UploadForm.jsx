@@ -14,9 +14,11 @@ import {
   ChevronUp,
   GripVertical,
   Save,
+  Settings2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { lotesApi, layoutsApi, perfisSaidaApi } from '../../services/api';
+import { TransformationConfig } from '../layouts/TransformationConfig';
 
 const TIPO_DADO_OPTIONS = [
   { value: 'string', label: 'Texto' },
@@ -69,6 +71,7 @@ export const UploadForm = () => {
   // Output profiles
   const [perfisSaida, setPerfisSaida] = useState([]);
   const [selectedPerfilId, setSelectedPerfilId] = useState('');
+  const [transModalIdx, setTransModalIdx] = useState(null);
 
   // Load campos disponiveis and output profiles once
   useEffect(() => {
@@ -140,6 +143,7 @@ export const UploadForm = () => {
             coluna_nome: header,
             tipo_dado: 'string',
             obrigatorio: false,
+            transformacao: {},
           })),
         }));
       }
@@ -210,6 +214,7 @@ export const UploadForm = () => {
             coluna_excel: c.coluna_excel,
             tipo_dado: c.tipo_dado,
             obrigatorio: c.obrigatorio,
+            transformacao: c.transformacao || {},
           })),
         };
         const createdLayout = await layoutsApi.criar(layoutPayload);
@@ -551,8 +556,9 @@ export const UploadForm = () => {
                         <div className="col-span-1">Idx</div>
                         <div className="col-span-3">Cabeçalho Excel</div>
                         <div className="col-span-3">Campo Destino</div>
-                        <div className="col-span-2">Tipo</div>
+                        <div className="col-span-1">Tipo</div>
                         <div className="col-span-2">Amostra</div>
+                        <div className="col-span-1">Trans.</div>
                         <div className="col-span-1">Obrig.</div>
                       </div>
                       {newLayout.colunas.map((col, idx) => {
@@ -575,18 +581,33 @@ export const UploadForm = () => {
                                 {campoOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                               </select>
                             </div>
-                            <div className="col-span-2">
+                            <div className="col-span-1">
                               <select
                                 value={col.tipo_dado}
                                 onChange={(e) => updateColuna(idx, 'tipo_dado', e.target.value)}
                                 data-testid={`map-tipo-${idx}`}
-                                className="h-8 w-full rounded border border-slate-300 bg-white px-2 text-xs focus:ring-2 focus:ring-slate-950"
+                                className="h-8 w-full rounded border border-slate-300 bg-white px-1 text-xs focus:ring-2 focus:ring-slate-950"
                               >
                                 {TIPO_DADO_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                               </select>
                             </div>
                             <div className="col-span-2 text-xs font-mono text-slate-400 truncate" title={sampleStr}>
                               {sampleStr || '—'}
+                            </div>
+                            <div className="col-span-1 flex justify-center">
+                              <button
+                                type="button"
+                                onClick={() => setTransModalIdx(idx)}
+                                data-testid={`map-trans-${idx}`}
+                                className={`p-1 rounded transition-colors ${
+                                  col.transformacao && Object.keys(col.transformacao).length > 0
+                                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                    : 'hover:bg-slate-200 text-slate-400 hover:text-slate-600'
+                                }`}
+                                title="Transformações avançadas"
+                              >
+                                <Settings2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                             <div className="col-span-1 flex justify-center">
                               <input
@@ -600,6 +621,20 @@ export const UploadForm = () => {
                           </div>
                         );
                       })}
+
+                      {/* Transformation Modal */}
+                      {transModalIdx !== null && (
+                        <TransformationConfig
+                          transformacao={newLayout.colunas[transModalIdx]?.transformacao || {}}
+                          campoDestino={newLayout.colunas[transModalIdx]?.campo_destino || ''}
+                          onSave={(trans) => {
+                            updateColuna(transModalIdx, 'transformacao', trans);
+                            setTransModalIdx(null);
+                            toast.success('Transformação configurada');
+                          }}
+                          onClose={() => setTransModalIdx(null)}
+                        />
+                      )}
                     </div>
                   </div>
                 )}

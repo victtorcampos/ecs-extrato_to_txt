@@ -6,9 +6,11 @@ import {
   Trash2,
   Save,
   GripVertical,
+  Settings2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { layoutsApi } from '../../services/api';
+import { TransformationConfig } from './TransformationConfig';
 
 const TIPO_DADO_OPTIONS = [
   { value: 'string', label: 'Texto' },
@@ -34,6 +36,7 @@ const emptyColuna = () => ({
   formato: '',
   obrigatorio: false,
   valor_padrao: '',
+  transformacao: {},
 });
 
 const MapeamentoAdder = ({ onAdd }) => {
@@ -77,6 +80,7 @@ export const LayoutForm = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [camposDisponiveis, setCamposDisponiveis] = useState({});
+  const [transModalIdx, setTransModalIdx] = useState(null);
 
   const [form, setForm] = useState({
     cnpj: '',
@@ -284,8 +288,9 @@ export const LayoutForm = () => {
             <div className="col-span-3">Campo Destino</div>
             <div className="col-span-2">Coluna Excel</div>
             <div className="col-span-2">Tipo</div>
-            <div className="col-span-2">Formato</div>
+            <div className="col-span-1">Formato</div>
             <div className="col-span-1">Obrig.</div>
+            <div className="col-span-1">Trans.</div>
             <div className="col-span-1" />
           </div>
           {form.colunas.map((col, idx) => (
@@ -328,14 +333,14 @@ export const LayoutForm = () => {
                   ))}
                 </select>
               </div>
-              <div className="col-span-2">
+              <div className="col-span-1">
                 <input
                   type="text"
                   value={col.formato || ''}
                   onChange={(e) => updateColuna(idx, 'formato', e.target.value)}
                   placeholder="%d/%m/%Y"
                   data-testid={`coluna-formato-${idx}`}
-                  className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm font-mono focus:ring-2 focus:ring-slate-950"
+                  className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-xs font-mono focus:ring-2 focus:ring-slate-950"
                 />
               </div>
               <div className="col-span-1 flex justify-center">
@@ -349,6 +354,22 @@ export const LayoutForm = () => {
               </div>
               <div className="col-span-1 flex justify-center">
                 <button
+                  type="button"
+                  onClick={() => setTransModalIdx(idx)}
+                  data-testid={`coluna-trans-${idx}`}
+                  className={`p-1.5 rounded transition-colors ${
+                    col.transformacao && Object.keys(col.transformacao).length > 0
+                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                      : 'hover:bg-slate-200 text-slate-400 hover:text-slate-600'
+                  }`}
+                  title="Transformações avançadas"
+                >
+                  <Settings2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="col-span-1 flex justify-center">
+                <button
+                  type="button"
                   onClick={() => removeColuna(idx)}
                   disabled={form.colunas.length <= 1}
                   data-testid={`remove-coluna-${idx}`}
@@ -359,6 +380,20 @@ export const LayoutForm = () => {
               </div>
             </div>
           ))}
+
+          {/* Transformation Modal */}
+          {transModalIdx !== null && (
+            <TransformationConfig
+              transformacao={form.colunas[transModalIdx]?.transformacao || {}}
+              campoDestino={form.colunas[transModalIdx]?.campo_destino || ''}
+              onSave={(trans) => {
+                updateColuna(transModalIdx, 'transformacao', trans);
+                setTransModalIdx(null);
+                toast.success('Transformação configurada');
+              }}
+              onClose={() => setTransModalIdx(null)}
+            />
+          )}
         </div>
       </section>
 

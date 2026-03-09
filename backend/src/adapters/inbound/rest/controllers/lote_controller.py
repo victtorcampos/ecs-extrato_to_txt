@@ -14,8 +14,8 @@ from src.adapters.inbound.rest.dto import (
     EstatisticasResponse,
     MensagemResponse
 )
-from src.adapters.outbound.repositories.sqlalchemy import SQLAlchemyLoteRepository, SQLAlchemyMapeamentoRepository
-from src.adapters.outbound.excel_parser import CalamineExcelParser
+from src.adapters.outbound.repositories.sqlalchemy import SQLAlchemyLoteRepository, SQLAlchemyMapeamentoRepository, SQLAlchemyLayoutRepository
+from src.adapters.outbound.excel_parser import CalamineExcelParser, DynamicExcelParser
 from src.adapters.outbound.txt_generator import TxtGenerator
 from src.adapters.outbound.email import ResendEmailSender
 from src.application.usecases import (
@@ -155,7 +155,9 @@ async def _processar_lote_background(lote_id: str):
         try:
             lote_repo = SQLAlchemyLoteRepository(session)
             mapeamento_repo = SQLAlchemyMapeamentoRepository(session)
+            layout_repo = SQLAlchemyLayoutRepository(session)
             excel_parser = CalamineExcelParser()
+            dynamic_parser = DynamicExcelParser()
             txt_generator = TxtGenerator()
             email_sender = ResendEmailSender()
             
@@ -164,7 +166,9 @@ async def _processar_lote_background(lote_id: str):
                 mapeamento_repo,
                 excel_parser,
                 txt_generator,
-                email_sender
+                email_sender,
+                layout_repository=layout_repo,
+                dynamic_parser=dynamic_parser,
             )
             
             await use_case.executar(lote_id)
