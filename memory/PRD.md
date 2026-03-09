@@ -44,8 +44,28 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - [x] **Regras de Processamento** (2026-03-08)
 - [x] **Upload com Preview Excel e Layout Inline** (2026-03-08)
 - [x] **Múltiplos Perfis de Saída (TXT, XML, JSON)** (2026-03-09)
+- [x] **Transformação Avançada de Dados** (2026-03-09)
 
 ## O que foi implementado
+
+### Transformação Avançada de Dados (2026-03-09)
+- **DynamicExcelParser**: Parser dinâmico que usa LayoutExcel para extrair dados
+  - Suporte a referência de colunas por índice (0, 1, 2) ou letra (A, B, C)
+  - Formatação de números: automático, BR vírgula (1.234,56), BR moeda (R$), US ponto (1,234.56)
+  - Extração D/C embutido no valor: sufixo ("356,12 D") e prefixo ("D 356,12")
+  - Campos compostos: separação CNPJ/CPF + Nome ("25789456000196 - EMPRESA LTDA")
+  - Extração com Regex: aplicação de expressões regulares com captura de grupo
+  - Concatenação de colunas: combinar múltiplas colunas do Excel em um campo
+  - Suporte a ConfigValor completo: sinal_valor, coluna_tipo, colunas_separadas, fixo_debito/credito
+  - Parsing de datas em múltiplos formatos
+- **ProcessarLoteUseCase atualizado**: Usa DynamicExcelParser quando layout_id está disponível, com fallback para parser hardcoded
+- **Frontend TransformationConfig modal**: Interface visual para configurar transformações por coluna
+  - Formato de número (dropdown)
+  - Valor com D/C embutido (contextual para campos numéricos)
+  - Campo composto com separador (contextual para campos CNPJ/CPF)
+  - Extração com Regex (campo texto)
+  - Concatenação de colunas (lista dinâmica + separador)
+- **Integrado em LayoutForm.jsx e UploadForm.jsx**: Botão de engrenagem (Settings2) ao lado de cada coluna mapeada
 
 ### Backend (2026-03-08)
 - Estrutura Clean Architecture completa
@@ -70,68 +90,21 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - **SQLAlchemy Repository**: CRUD completo para layouts
 - **Controller REST**: /api/v1/import-layouts (CRUD + clone + campos-disponiveis)
 - **DTOs**: CriarLayoutRequest, AtualizarLayoutRequest, ClonarLayoutRequest, LayoutResponse, LayoutListResponse
-- **23 campos de mapeamento** disponíveis (valor, conta_debito, conta_credito, data, historico, etc.)
 
 ### Backend - Regras de Processamento (2026-03-08)
-- **Use Cases**: CriarRegra, AtualizarRegra, ListarRegras, ReordenarRegras, DeletarRegra, TestarRegra, AplicarRegras
-- **Repository Port**: RegraRepositoryPort (interface completa)
-- **SQLAlchemy Repository**: CRUD completo + reordenação
-- **Controller REST**: /api/v1/import-layouts/{layout_id}/rules (CRUD + reorder)
-- **DTOs**: CriarRegraRequest, AtualizarRegraRequest, ReordenarRegrasRequest, RegraResponse, RegraListResponse
 - **Motor de Regras**: Suporte a FILTRO, TRANSFORMAÇÃO, VALIDAÇÃO e ENRIQUECIMENTO
 - **14 operadores de condição**: igual, diferente, maior, menor, contém, regex, etc.
 - **11 tipos de ação**: excluir, definir_valor, template, copiar_campo, maiúscula, etc.
-- **ConfigValor flexível**: 5 métodos de determinação D/C:
-  - `sinal_valor`: Positivo=Débito, Negativo=Crédito
-  - `coluna_tipo`: Uma coluna com valores D/C (com mapeamento editável de 12+ variantes)
-  - `colunas_separadas`: Colunas distintas para Débito e Crédito
-  - `fixo_debito` / `fixo_credito`: Tipo fixo
-  - Suporte a `case_insensitive` e mapeamento customizável de textos
+- **ConfigValor flexível**: 5 métodos de determinação D/C
+
+### Backend - Perfis de Saída (2026-03-09)
+- **DominioSistemasTxtGenerator**: Implementação fiel ao contrato Domínio Sistemas
+- **OutputGeneratorFactory**: Factory pattern para selecionar gerador correto
+- **CRUD API**: `/api/v1/output-profiles`
 
 ### Frontend (2026-03-08)
 - Design System Swiss High-Contrast
-- Dashboard com estatísticas
-- Formulário de Upload com drag & drop
-- Lista de Lotes com filtros e paginação
-- Detalhes do Lote com lançamentos
-- Resolução de Pendências
-
-### Frontend - Mapeamentos (2026-03-08)
-- **Nova página**: /mapeamentos
-- **Filtro por CNPJ**, busca, seleção múltipla, edição em lote
-
-### Frontend - Layouts de Importação (2026-03-08)
-- **Nova página**: /layouts (lista de layouts com filtro por CNPJ)
-- **Formulário**: /layouts/novo e /layouts/{id}/editar (CNPJ, nome, descrição, config planilha, mapeamento de colunas, config valor D/C)
-- **Detalhe**: /layouts/{id} (colunas mapeadas + lista de regras com criação/edição inline)
-- **Ações**: Ativar/desativar, editar, clonar, excluir
-- **Navegação**: Link "Layouts" com ícone FileSpreadsheet no sidebar
-
-### Frontend - Upload com Preview e Layout Inline (2026-03-08)
-- **Fluxo em 3 passos**: 1. Upload do Excel, 2. Dados do Lote, 3. Layout de Importação
-- **Preview do Excel**: Tabela com cabeçalhos e primeiras 5 linhas de dados reais
-- **Seleção de Layout**: Radio entre "Layout existente" (dropdown filtrado por CNPJ) e "Novo layout"
-- **Novo Layout inline**: Config de planilha (aba, linhas) + mapeamento visual de colunas com amostras
-- **Endpoint novo**: `POST /api/v1/import-layouts/preview-excel` (extrai abas, cabeçalhos, dados)
-
-### Backend - Perfis de Saída (2026-03-09)
-- **Entidade Domain**: `PerfilSaida` (nome, sistema_destino, formato, config, padrao)
-- **Value Objects**: `FormatoSaida` (TXT_DELIMITADO, XML_XSD, JSON_SCHEMA), `SistemaDestino` (DOMINIO_SISTEMAS)
-- **Config flexível**: delimitador, codificação, tipo_lancamento_padrao (X/D/C/V), codigo_usuario, nome_usuario, codigo_filial, codigo_historico_padrao
-- **OutputGeneratorPort**: Interface genérica para geradores de saída (gerar, validar, extensao)
-- **DominioSistemasTxtGenerator**: Implementação fiel ao contrato Domínio Sistemas:
-  - Registro 0000: `|0000|{cnpj}|` (identificação empresa)
-  - Registro 6000: `|6000|{tipo}|{cod_padrao}|{localizador}|{rtt}|` (cabeçalho lançamento)
-  - Registro 6100: `|6100|{data}|{conta_deb}|{conta_cred}|{valor,00}|{cod_hist}|{historico}|{usuario}|{cod_filial}|{scp}|` (detalhe)
-  - Valor formatado com vírgula (500,00), data DD/MM/AAAA
-- **OutputGeneratorFactory**: Factory pattern para selecionar gerador correto por sistema+formato
-- **CRUD API**: `/api/v1/output-profiles` (CRUD completo + sistemas-disponiveis)
-
-### Frontend - Perfis de Saída (2026-03-09)
-- **Nova página**: `/perfis-saida` (lista com badges PADRÃO/ATIVO, form inline CRUD)
-- **Config visual**: Campos de configuração do formato (delimitador, tipo lançamento, usuário, filial, etc.)
-- **Upload integrado**: Step 4 no upload com dropdown de perfil de saída (pré-selecionado padrão)
-- **Navegação**: Link "Perfis de Saída" com ícone FileOutput no sidebar
+- Dashboard, Upload, Lotes, Mapeamentos, Layouts, Perfis de Saída
 
 ## Backlog (P0/P1/P2)
 
@@ -139,21 +112,20 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - [x] MVP completo
 - [x] CRUD Mapeamentos
 - [x] Layouts de Importação + Regras de Processamento
-- [x] Bug: coluna layout_id faltando na tabela lotes (migração SQLite)
+- [x] Bug: coluna layout_id faltando na tabela lotes
 - [x] Upload com Preview Excel, Seleção/Criação de Layout Inline
 - [x] Múltiplos Perfis de Saída + Gerador Domínio Sistemas TXT
+- [x] Transformação Avançada de Dados (DynamicExcelParser + UI)
 
 ### P1 - Importante
 - [ ] Integrar o gerador de saída no ProcessarLoteUseCase (usar perfil_saida_id do lote)
 - [ ] Implementar geradores XML e JSON para Domínio Sistemas
-- [ ] Adicionar mais sistemas de destino (configuráveis pelo usuário)
-- [ ] Frontend: Construtor visual de regras aprimorado (RegraBuilder.jsx)
+- [ ] Construtor visual de regras aprimorado (RegraBuilder.jsx)
 - [ ] Backend: Preview de parsing com layout + arquivo de exemplo
-- [ ] Backend: Integrar layouts/regras no fluxo de processamento de lotes existente
 - [ ] Configuração de credenciais Resend para envio real de emails
 
 ### P2 - Melhorias
-- [ ] Clonagem avançada de layouts (com UI dedicada)
+- [ ] Clonagem avançada de layouts com UI dedicada
 - [ ] Migração de processamento assíncrono para Celery/Redis
 - [ ] Histórico de processamentos
 - [ ] Export de relatórios em PDF
