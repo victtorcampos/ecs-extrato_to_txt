@@ -1,0 +1,12 @@
+export { default as DashboardPage } from './DashboardPage';
+export { default as UploadPage } from './UploadPage';
+export { default as UploadClassicPage } from './UploadClassicPage';
+export { default as LotesPage } from './LotesPage';
+export { default as LoteDetailPage } from './LoteDetailPage';
+export { default as PendenciasPage } from './PendenciasPage';
+export { default as MapeamentosPage } from './MapeamentosPage';
+export { default as LayoutsPage } from './LayoutsPage';
+export { default as LayoutFormPage } from './LayoutFormPage';
+export { default as LayoutDetailPage } from './LayoutDetailPage';
+export { default as PerfisSaidaPage } from './PerfisSaidaPage';
+export { default as NotFoundPage } from './NotFoundPage';

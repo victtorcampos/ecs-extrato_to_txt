@@ -89,6 +89,8 @@ async def create_processar_lote_dependencies():
             perfil_saida_repository=perfil_saida_repo,
         )
         return session, use_case
-    except Exception:
+    except Exception as e:
         await session.close()
+        from src.config.logging_config import get_logger
+        get_logger("dependencies").error(f"Falha ao criar dependencias background: {e}")
         raise

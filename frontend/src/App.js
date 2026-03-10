@@ -4,36 +4,25 @@ import { Toaster } from 'sonner';
 import './App.css';
 
 import { Layout } from './components/layout';
-import { Dashboard } from './components/dashboard';
 
-// Lazy-loaded pages (F-10)
-const ImportWizard = lazy(() => import('./components/import-wizard/ImportWizard'));
-const UploadFormLegacy = lazy(() => import('./components/upload/UploadForm'));
-const LotesList = lazy(() => import('./components/lotes/LotesList'));
-const LoteDetail = lazy(() => import('./components/lotes/LoteDetail'));
-const PendenciasResolver = lazy(() => import('./components/pendencias/PendenciasResolver'));
-const MapeamentosList = lazy(() => import('./components/mapeamentos/MapeamentosList'));
-const LayoutsList = lazy(() => import('./components/layouts/LayoutsList'));
-const LayoutForm = lazy(() => import('./components/layouts/LayoutForm'));
-const LayoutDetail = lazy(() => import('./components/layouts/LayoutDetail'));
-const PerfisSaidaList = lazy(() => import('./components/perfis-saida/PerfisSaidaList'));
+// FSD pages layer — lazy-loaded (F-10)
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const UploadPage = lazy(() => import('./pages/UploadPage'));
+const UploadClassicPage = lazy(() => import('./pages/UploadClassicPage'));
+const LotesPage = lazy(() => import('./pages/LotesPage'));
+const LoteDetailPage = lazy(() => import('./pages/LoteDetailPage'));
+const PendenciasPage = lazy(() => import('./pages/PendenciasPage'));
+const MapeamentosPage = lazy(() => import('./pages/MapeamentosPage'));
+const LayoutsPage = lazy(() => import('./pages/LayoutsPage'));
+const LayoutFormPage = lazy(() => import('./pages/LayoutFormPage'));
+const LayoutDetailPage = lazy(() => import('./pages/LayoutDetailPage'));
+const PerfisSaidaPage = lazy(() => import('./pages/PerfisSaidaPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function PageLoader() {
   return (
     <div className="flex items-center justify-center py-20" data-testid="page-loader">
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900" />
-    </div>
-  );
-}
-
-function NotFoundPage() {
-  return (
-    <div className="flex flex-col items-center justify-center py-20" data-testid="not-found-page">
-      <h1 className="text-6xl font-bold text-slate-900 font-[Manrope]">404</h1>
-      <p className="mt-4 text-lg text-slate-500 font-[IBM_Plex_Sans]">Página não encontrada</p>
-      <a href="/" className="mt-6 px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors" data-testid="back-home-link">
-        Voltar ao início
-      </a>
     </div>
   );
 }
@@ -45,19 +34,19 @@ function App() {
       <Layout>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<DashboardPage />} />
             <Route path="/home" element={<Navigate to="/" replace />} />
-            <Route path="/upload" element={<ImportWizard />} />
-            <Route path="/upload/classic" element={<UploadFormLegacy />} />
-            <Route path="/lotes" element={<LotesList />} />
-            <Route path="/lotes/:id" element={<LoteDetail />} />
-            <Route path="/lotes/:id/pendencias" element={<PendenciasResolver />} />
-            <Route path="/mapeamentos" element={<MapeamentosList />} />
-            <Route path="/layouts" element={<LayoutsList />} />
-            <Route path="/layouts/novo" element={<LayoutForm />} />
-            <Route path="/layouts/:id" element={<LayoutDetail />} />
-            <Route path="/layouts/:id/editar" element={<LayoutForm />} />
-            <Route path="/perfis-saida" element={<PerfisSaidaList />} />
+            <Route path="/upload" element={<UploadPage />} />
+            <Route path="/upload/classic" element={<UploadClassicPage />} />
+            <Route path="/lotes" element={<LotesPage />} />
+            <Route path="/lotes/:id" element={<LoteDetailPage />} />
+            <Route path="/lotes/:id/pendencias" element={<PendenciasPage />} />
+            <Route path="/mapeamentos" element={<MapeamentosPage />} />
+            <Route path="/layouts" element={<LayoutsPage />} />
+            <Route path="/layouts/novo" element={<LayoutFormPage />} />
+            <Route path="/layouts/:id" element={<LayoutDetailPage />} />
+            <Route path="/layouts/:id/editar" element={<LayoutFormPage />} />
+            <Route path="/perfis-saida" element={<PerfisSaidaPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
