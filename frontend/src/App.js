@@ -7,7 +7,8 @@ import { Layout } from './components/layout';
 import { Dashboard } from './components/dashboard';
 
 // Lazy-loaded pages (F-10)
-const UploadForm = lazy(() => import('./components/upload/UploadForm'));
+const ImportWizard = lazy(() => import('./components/import-wizard/ImportWizard'));
+const UploadFormLegacy = lazy(() => import('./components/upload/UploadForm'));
 const LotesList = lazy(() => import('./components/lotes/LotesList'));
 const LoteDetail = lazy(() => import('./components/lotes/LoteDetail'));
 const PendenciasResolver = lazy(() => import('./components/pendencias/PendenciasResolver'));
@@ -46,7 +47,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/home" element={<Navigate to="/" replace />} />
-            <Route path="/upload" element={<UploadForm />} />
+            <Route path="/upload" element={<ImportWizard />} />
+            <Route path="/upload/classic" element={<UploadFormLegacy />} />
             <Route path="/lotes" element={<LotesList />} />
             <Route path="/lotes/:id" element={<LoteDetail />} />
             <Route path="/lotes/:id/pendencias" element={<PendenciasResolver />} />

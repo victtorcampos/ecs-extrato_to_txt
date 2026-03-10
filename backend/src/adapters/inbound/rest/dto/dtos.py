@@ -415,3 +415,96 @@ class PerfilSaidaListResponse(BaseModel):
     """DTO de resposta para lista de perfis de saída"""
     items: List[PerfilSaidaResponse]
     total: int
+
+
+# ============================================
+# DTOs para Auto-Detecção de Layout (Fase 4)
+# ============================================
+
+class DetectarLayoutRequest(BaseModel):
+    """DTO para requisição de auto-detecção de layout"""
+    arquivo_base64: str = Field(..., description="Arquivo Excel em base64")
+    nome_aba: Optional[str] = Field(default=None, description="Nome da aba (usa a primeira se omitido)")
+
+
+class ColunaSugeridaResponse(BaseModel):
+    """DTO para coluna detectada/sugerida"""
+    coluna_excel: str
+    nome_cabecalho: str
+    campo_destino: str
+    tipo_dado: str
+    formato: Optional[str] = None
+    transformacao: Dict = Field(default_factory=dict)
+    confianca: float = Field(ge=0.0, le=1.0)
+    valores_amostra: List = Field(default_factory=list)
+
+
+class TemplateRegraResponse(BaseModel):
+    """DTO para template contextual de regra sugerida"""
+    nome: str
+    descricao: str
+    tipo: str
+    condicoes: List[Dict] = Field(default_factory=list)
+    conta_debito: str = ""
+    conta_credito: str = ""
+    valores_encontrados: List[str] = Field(default_factory=list)
+
+
+class DetectarLayoutResponse(BaseModel):
+    """DTO de resposta para auto-detecção de layout"""
+    config_planilha: Dict
+    colunas: List[ColunaSugeridaResponse]
+    config_valor: Dict
+    templates_regras: List[TemplateRegraResponse] = Field(default_factory=list)
+    preview_dados: List[List] = Field(default_factory=list)
+    abas: List[str] = Field(default_factory=list)
+
+
+# ============================================
+# DTOs para Test-Parse / Preview (Fase 4)
+# ============================================
+
+class TestParseRequest(BaseModel):
+    """DTO para requisição de test-parse (preview sem gravar)"""
+    arquivo_base64: str = Field(..., description="Arquivo Excel em base64")
+    layout_id: Optional[str] = Field(default=None, description="ID de layout existente")
+    layout_config: Optional[Dict] = Field(default=None, description="Configuração de layout inline")
+    periodo_mes: int = Field(..., ge=1, le=12)
+    periodo_ano: int = Field(..., ge=2000, le=2100)
+    regras_conta: Optional[List[Dict]] = Field(default=None, description="Regras de conta opcionais")
+
+
+class LancamentoPreviewResponse(BaseModel):
+    """DTO para lançamento no preview"""
+    linha: int
+    data: Optional[str] = None
+    valor: float = 0.0
+    conta_debito: str = ""
+    conta_credito: str = ""
+    historico: str = ""
+    documento: str = ""
+    status: str = "ok"
+    mensagem: Optional[str] = None
+
+
+class ResumoTestParseResponse(BaseModel):
+    """DTO para resumo do test-parse"""
+    total: int = 0
+    ok: int = 0
+    fora_periodo: int = 0
+    sem_conta: int = 0
+    erros: int = 0
+
+
+class ErroTestParseResponse(BaseModel):
+    """DTO para erro individual no test-parse"""
+    linha: int
+    campo: str = ""
+    mensagem: str = ""
+
+
+class TestParseResponse(BaseModel):
+    """DTO de resposta para test-parse (preview)"""
+    lancamentos: List[LancamentoPreviewResponse] = Field(default_factory=list)
+    resumo: ResumoTestParseResponse = Field(default_factory=ResumoTestParseResponse)
+    erros: List[ErroTestParseResponse] = Field(default_factory=list)

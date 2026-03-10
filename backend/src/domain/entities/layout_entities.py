@@ -100,11 +100,23 @@ class ColunaLayout:
     
     @staticmethod
     def from_dict(data: dict) -> 'ColunaLayout':
+        # Map detect types to valid TipoDado enum values
+        tipo_dado_map = {
+            "data": "date",
+            "decimal_br": "decimal",
+            "decimal_dc": "decimal",
+            "cnpj_cpf": "string",
+            "campo_composto": "string",
+            "tipo_dc": "string",
+        }
+        raw_tipo = data.get("tipo_dado", "string")
+        normalized_tipo = tipo_dado_map.get(raw_tipo, raw_tipo)
+        
         return ColunaLayout(
             id=data.get("id", str(uuid4())),
             campo_destino=data.get("campo_destino", ""),
             coluna_excel=data.get("coluna_excel", ""),
-            tipo_dado=TipoDado(data.get("tipo_dado", "string")),
+            tipo_dado=TipoDado(normalized_tipo),
             formato=data.get("formato"),
             obrigatorio=data.get("obrigatorio", False),
             valor_padrao=data.get("valor_padrao"),

@@ -14,6 +14,15 @@ from src.adapters.inbound.rest.dto import (
     MensagemResponse,
     PreviewExcelRequest,
     PreviewExcelResponse,
+    DetectarLayoutRequest,
+    DetectarLayoutResponse,
+    ColunaSugeridaResponse,
+    TemplateRegraResponse,
+    TestParseRequest,
+    TestParseResponse,
+    LancamentoPreviewResponse,
+    ResumoTestParseResponse,
+    ErroTestParseResponse,
 )
 from src.application.usecases import (
     CriarLayoutUseCase,
@@ -22,6 +31,7 @@ from src.application.usecases import (
     DeletarLayoutUseCase,
     ClonarLayoutUseCase,
 )
+from src.application.usecases.detect_usecases import DetectarLayoutUseCase, PreviewParseUseCase
 from src.domain.entities import LayoutExcel
 from src.domain.exceptions import DomainError, LayoutNaoEncontradoError
 from src.domain.value_objects import get_campos_disponiveis
@@ -273,3 +283,60 @@ async def deletar_layout(
         raise HTTPException(status_code=404, detail="Layout não encontrado")
     except DomainError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+
+# ─── Endpoints Fase 4: Auto-Detecção e Test-Parse ────────────────
+
+@router.post("/detect", response_model=DetectarLayoutResponse)
+async def detectar_layout(request: DetectarLayoutRequest):
+    """Auto-detecta estrutura, tipos e mapeamento de um arquivo Excel"""
+    try:
+        use_case = DetectarLayoutUseCase()
+        resultado = use_case.executar(
+            arquivo_base64=request.arquivo_base64,
+            nome_aba=request.nome_aba,
+        )
+
+        return DetectarLayoutResponse(
+            config_planilha=resultado["config_planilha"],
+            colunas=[ColunaSugeridaResponse(**c) for c in resultado["colunas"]],
+            config_valor=resultado["config_valor"],
+            templates_regras=[TemplateRegraResponse(**t) for t in resultado["templates_regras"]],
+            preview_dados=resultado["preview_dados"],
+            abas=resultado["abas"],
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro na auto-detecção: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Erro na auto-detecção: {str(e)}")
+
+
+@router.post("/test-parse", response_model=TestParseResponse)
+async def test_parse(
+    request: TestParseRequest,
+    layout_repo=Depends(get_layout_repository),
+):
+    """Simula parsing completo sem gravar — preview dos lançamentos"""
+    try:
+        use_case = PreviewParseUseCase(layout_repository=layout_repo)
+        resultado = await use_case.executar(
+            arquivo_base64=request.arquivo_base64,
+            periodo_mes=request.periodo_mes,
+            periodo_ano=request.periodo_ano,
+            layout_id=request.layout_id,
+            layout_config=request.layout_config,
+            regras_conta=request.regras_conta,
+        )
+
+        return TestParseResponse(
+            lancamentos=[LancamentoPreviewResponse(**l) for l in resultado["lancamentos"]],
+            resumo=ResumoTestParseResponse(**resultado["resumo"]),
+            erros=[ErroTestParseResponse(**e) for e in resultado["erros"]],
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro no test-parse: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Erro no test-parse: {str(e)}")
