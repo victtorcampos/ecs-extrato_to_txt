@@ -65,10 +65,12 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 
 ## Backlog (P0/P1/P2)
 
-### P0 - Em Progresso (Refatoração v2)
+### P0 - Concluído (Refatoração v2 - 5 Fases)
 - [x] Fase 1 — Estabilização e Fundação Arquitetural
 - [x] Fase 2 — Migração Estrutural + Correções de Performance
 - [x] Fase 3 — FSD Completo + Robustez Backend
+- [x] Fase 4 — Feature v2: Auto-Detecção + Preview
+- [x] Fase 5 — Refinamento, OFX prep, Validação Final
   - except Exception: pass eliminado, substituído por logging (B-08)
   - TxtGenerator externalizado em TxtConfig dataclass (B-09)
   - Lazy loading com React.lazy + Suspense para 9 rotas (F-10)
@@ -80,7 +82,11 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
   - **Frontend Import Wizard**: 4 steps (Upload → Revisão → Contas/Regras → Preview)
   - Templates contextuais de regras baseados nos dados reais
   - Bug fix: tipo_dado mapping normalizado entre detect e layout entities
-- [ ] Fase 5 — Refinamento, OFX prep, Validação Final
+- [x] Fase 5 — Refinamento, OFX prep, Validação Final (2026-03-10)
+  - **OFXParserPort**: contrato (TransacaoOFX, ExtratoOFX, parse/validar)
+  - **Perfil de saída integrado**: ProcessarLoteUseCase._gerar_saida() usa OutputGeneratorFactory
+  - **Wizard**: seletor de perfil de saída com pre-seleção do perfil padrão
+  - DI factory atualizado com perfil_saida_repository
   - DetectarLayoutUseCase (auto-detecção de estrutura, tipos, mapeamento)
   - PreviewParseUseCase (simulação sem gravar)
   - Endpoints /detect e /test-parse
