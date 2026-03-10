@@ -16,10 +16,13 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button, StatusBadge, Spinner, Badge } from '../ui';
 import { lotesApi } from '../../services/api';
 import { formatDate, formatCurrency } from '../../lib/utils';
+import { useDownload, useNotification } from '../../hooks';
 
 export const LoteDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { download, downloading } = useDownload();
+  const { notifyError } = useNotification();
   
   const [lote, setLote] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -67,15 +70,9 @@ export const LoteDetail = () => {
 
   const handleDownload = async () => {
     try {
-      const blob = await lotesApi.downloadArquivo(id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${lote.protocolo}.txt`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await download(() => lotesApi.downloadArquivo(id), `${lote.protocolo}.txt`);
     } catch (err) {
-      setError('Erro ao baixar arquivo');
+      notifyError(err, 'Erro ao baixar arquivo');
     }
   };
 

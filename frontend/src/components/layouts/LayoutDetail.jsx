@@ -472,3 +472,5 @@ export const LayoutDetail = () => {
     </div>
   );
 };
+
+export default LayoutDetail;

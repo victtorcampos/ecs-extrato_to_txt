@@ -1,58 +1,77 @@
 """Gerador de arquivo TXT no formato padrão contábil"""
+from dataclasses import dataclass, field
 from typing import List, Dict
 from src.application.ports.services import TxtGeneratorPort
 from src.domain.entities import Lancamento
 
 
+@dataclass
+class TxtConfig:
+    """Configuração externalizável do formato TXT"""
+    codigo_registro_marcador: str = "6000"
+    codigo_registro_lancamento: str = "6100"
+    codigo_conta_padrao: str = "8818"
+    codigo_usuario: str = "489"
+    nome_usuario: str = "VICTOR"
+    separador: str = "|"
+    codigo_operacao_padrao: str = "9919"
+    mapeamento_operacao: Dict[str, str] = field(default_factory=lambda: {
+        "ALUGUEL": "45",
+    })
+
+
+# Configuração padrão (Domínio Sistemas)
+DEFAULT_TXT_CONFIG = TxtConfig()
+
+
 class TxtGenerator(TxtGeneratorPort):
     """Implementação do gerador de arquivo TXT"""
-    
-    # Configuração padrão para o formato de saída
-    CODIGO_REGISTRO_MARCADOR = "6000"
-    CODIGO_REGISTRO_LANCAMENTO = "6100"
-    CODIGO_CONTA_PADRAO = "8818"  # Código de conta padrão
-    CODIGO_USUARIO = "489"  # Código de usuário padrão
-    NOME_USUARIO = "VICTOR"  # Nome do usuário
-    
+
+    def __init__(self, config: TxtConfig = None):
+        self.config = config or DEFAULT_TXT_CONFIG
+
     def gerar(self, lancamentos: List[Lancamento], cnpj: str, mapeamentos: Dict[str, str]) -> str:
         """Gera arquivo TXT no formato esperado"""
+        c = self.config
+        sep = c.separador
         linhas = []
-        
+
         # Header com CNPJ
-        linhas.append(f"|0000|{cnpj}|")
-        
+        linhas.append(f"{sep}0000{sep}{cnpj}{sep}")
+
         for lanc in lancamentos:
             # Linha marcadora antes de cada lançamento
-            linhas.append(f"|{self.CODIGO_REGISTRO_MARCADOR}|X||||")
-            
+            linhas.append(f"{sep}{c.codigo_registro_marcador}{sep}X{sep}{sep}{sep}{sep}")
+
             # Linha de lançamento
             data_formatada = lanc.data.strftime("%d/%m/%Y") if lanc.data else ""
-            
-            # Determinar código de operação baseado no tipo de operação
-            # Código 45 para aluguel, 9919 para demais operações
-            codigo_operacao = "9919"
+
+            # Determinar código de operação
+            codigo_operacao = c.codigo_operacao_padrao
             historico_upper = (lanc.historico or "").upper()
-            if "ALUGUEL" in historico_upper:
-                codigo_operacao = "45"
-            
+            for palavra, codigo in c.mapeamento_operacao.items():
+                if palavra in historico_upper:
+                    codigo_operacao = codigo
+                    break
+
             # Formatar valor com vírgula (sem separador de milhar)
             valor_formatado = f"{lanc.valor:.2f}".replace(".", ",")
-            
-            linha = "|".join([
+
+            linha = sep.join([
                 "",
-                self.CODIGO_REGISTRO_LANCAMENTO,
+                c.codigo_registro_lancamento,
                 data_formatada,
                 codigo_operacao,
-                self.CODIGO_CONTA_PADRAO,  # Sempre usar código padrão 8818
+                c.codigo_conta_padrao,
                 valor_formatado,
                 "",
                 lanc.historico or "",
-                self.NOME_USUARIO,
-                self.CODIGO_USUARIO,
+                c.nome_usuario,
+                c.codigo_usuario,
                 "",
                 ""
             ])
-            
+
             linhas.append(linha)
-        
+
         return "\n".join(linhas)

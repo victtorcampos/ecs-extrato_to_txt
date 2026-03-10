@@ -1,0 +1,78 @@
+{
+  "summary": "Phase 5 (Final Phase) testing completed successfully. All 12 backend tests pass (100%). All Phase 5 features verified: (1) OFXParserPort contract exists at expected path, (2) ProcessarLoteUseCase accepts perfil_saida_repository parameter, (3) DI factory create_processar_lote_dependencies includes SQLAlchemyPerfilSaidaRepository, (4) POST /api/v1/lotes accepts perfil_saida_id and persists it correctly, (5) GET /api/v1/output-profiles returns profiles with padrao flag, (6) Import Wizard Step 1 shows Perfil de Saída dropdown with pre-selected default profile.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✅ GET /api/health - Returns healthy status",
+    "✅ GET /api/v1/import-layouts - Returns 2 layouts",
+    "✅ GET /api/v1/lotes/estatisticas - Returns statistics",
+    "✅ GET /api/v1/output-profiles - Returns 2 profiles with padrao flag (1 marked as padrao)",
+    "✅ POST /api/v1/import-layouts/detect - Auto-detection works (34 columns detected)",
+    "✅ POST /api/v1/import-layouts/test-parse - Works with existing layout_id",
+    "✅ POST /api/v1/lotes with perfil_saida_id - Creates lote and persists perfil_saida_id",
+    "✅ POST /api/v1/lotes without perfil_saida_id - Creates lote with null perfil_saida_id",
+    "✅ OFXParserPort contract file exists at /app/backend/src/application/ports/services/ofx_parser_port.py",
+    "✅ OFXParserPort, TransacaoOFX, ExtratoOFX classes can be imported",
+    "✅ DI module has get_perfil_saida_repository and create_processar_lote_dependencies",
+    "✅ ProcessarLoteUseCase.__init__ accepts perfil_saida_repository parameter",
+    "✅ Frontend: Import Wizard at /upload loads correctly with 4-step stepper",
+    "✅ Frontend: Step 1 shows Perfil de Saída dropdown (data-testid='perfil-saida-select')",
+    "✅ Frontend: Perfil dropdown has 3 options (Padrão TXT, Domínio Sistemas default, ISO AÇO custom)",
+    "✅ Frontend: Default profile 'Domínio Sistemas - TXT Delimitado' is pre-selected (padrao=true)",
+    "✅ Frontend: /upload/classic loads legacy upload form with Perfil de Saída",
+    "✅ Frontend: /lotes page loads and shows lotes table",
+    "✅ Frontend: Dashboard, Layouts, Mapeamentos, Perfis de Saída pages load correctly"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_phase5_final.py",
+    "/app/test_reports/pytest/pytest_phase5.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_phase5_final.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (12/12 tests passed)",
+    "frontend": "100% (7/7 navigation and feature tests passed)"
+  },
+
+  "test_credentials": "No auth required",
+
+  "seed_data_creation": "Test lotes created and cleaned up during testing",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": true,
+
+  "context_for_next_testing_agent": "Phase 5 (final phase) fully verified. All 5 phases complete. Key features: (1) OFXParserPort contract at /app/backend/src/application/ports/services/ofx_parser_port.py - abstract class with parse() and validar() methods, (2) ProcessarLoteUseCase._gerar_saida() method uses perfil_saida_repository when lote.perfil_saida_id is set, (3) Import Wizard Step 1 loads perfis via perfisSaidaApi.listar() and pre-selects the padrao profile, (4) Classic upload at /upload/classic also has Perfil de Saída dropdown.",
+
+  "mocked_apis": {
+    "email_sender": "Email sending is MOCKED (ResendEmailSender)"
+  },
+
+  "phase5_verification": {
+    "ofx_parser_port": "VERIFIED - Contract exists with TransacaoOFX, ExtratoOFX dataclasses and OFXParserPort abstract class",
+    "processar_lote_with_perfil_saida": "VERIFIED - ProcessarLoteUseCase accepts perfil_saida_repository, uses OutputGeneratorFactory when perfil is set",
+    "di_factory_updated": "VERIFIED - create_processar_lote_dependencies includes SQLAlchemyPerfilSaidaRepository",
+    "lote_api_with_perfil_saida_id": "VERIFIED - POST /api/v1/lotes accepts and persists perfil_saida_id",
+    "output_profiles_with_padrao": "VERIFIED - GET /api/v1/output-profiles returns padrao flag",
+    "import_wizard_perfil_selector": "VERIFIED - Dropdown with pre-selected default profile",
+    "regression_tests": "VERIFIED - detect, test-parse, layouts, lotes, estatisticas all working"
+  }
+}

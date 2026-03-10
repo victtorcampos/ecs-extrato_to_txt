@@ -13,13 +13,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from src.config.database import init_db
+from src.config.logging_config import setup_logging
 from src.adapters.inbound.rest.controllers import lote_router, account_mapping_router, layout_router, regra_router, output_profile_router
+
+logger = setup_logging()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle manager para inicialização do banco"""
     await init_db()
+    logger.info("Sistema Contábil iniciado com sucesso")
     yield
 
 

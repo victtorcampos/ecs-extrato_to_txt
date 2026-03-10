@@ -45,6 +45,14 @@ class CNPJ:
     def numerico(self) -> str:
         return re.sub(r'[^\d]', '', self.valor)
 
+    @staticmethod
+    def formatar(cnpj_str: str) -> str:
+        """Formata CNPJ para exibição, sem validação de dígitos"""
+        cnpj = re.sub(r'[^\d]', '', cnpj_str)
+        if len(cnpj) == 14:
+            return f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:]}"
+        return cnpj_str
+
 
 @dataclass(frozen=True)
 class PeriodoContabil:

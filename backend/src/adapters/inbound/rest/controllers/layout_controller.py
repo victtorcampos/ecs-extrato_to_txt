@@ -4,7 +4,6 @@ import tempfile
 import os
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.adapters.inbound.rest.dto import (
     CriarLayoutRequest,
@@ -15,10 +14,15 @@ from src.adapters.inbound.rest.dto import (
     MensagemResponse,
     PreviewExcelRequest,
     PreviewExcelResponse,
-)
-from src.adapters.outbound.repositories.sqlalchemy import (
-    SQLAlchemyLayoutRepository,
-    SQLAlchemyRegraRepository,
+    DetectarLayoutRequest,
+    DetectarLayoutResponse,
+    ColunaSugeridaResponse,
+    TemplateRegraResponse,
+    TestParseRequest,
+    TestParseResponse,
+    LancamentoPreviewResponse,
+    ResumoTestParseResponse,
+    ErroTestParseResponse,
 )
 from src.application.usecases import (
     CriarLayoutUseCase,
@@ -27,19 +31,16 @@ from src.application.usecases import (
     DeletarLayoutUseCase,
     ClonarLayoutUseCase,
 )
+from src.application.usecases.detect_usecases import DetectarLayoutUseCase, PreviewParseUseCase
 from src.domain.entities import LayoutExcel
 from src.domain.exceptions import DomainError, LayoutNaoEncontradoError
 from src.domain.value_objects import get_campos_disponiveis
-from src.config.database import get_session
+from src.config.dependencies import get_layout_repository, get_regra_repository
+from src.config.logging_config import get_logger
 
+logger = get_logger("layout_controller")
 
 router = APIRouter(prefix="/api/v1/import-layouts", tags=["Import Layouts"])
-
-
-async def _get_repos(session: AsyncSession):
-    layout_repo = SQLAlchemyLayoutRepository(session)
-    regra_repo = SQLAlchemyRegraRepository(session)
-    return layout_repo, regra_repo
 
 
 def _layout_to_response(layout: LayoutExcel, total_regras: int = 0) -> LayoutResponse:
@@ -67,21 +68,21 @@ async def listar_layouts(
     apenas_ativos: bool = Query(False, description="Mostrar apenas ativos"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    session: AsyncSession = Depends(get_session),
+    layout_repo=Depends(get_layout_repository),
+    regra_repo=Depends(get_regra_repository),
 ):
     """Lista layouts de importação"""
     try:
-        layout_repo, regra_repo = await _get_repos(session)
         use_case = ListarLayoutsUseCase(layout_repo)
 
         layouts = await use_case.listar(cnpj=cnpj, apenas_ativos=apenas_ativos, skip=skip, limit=limit)
         total = await use_case.contar(cnpj=cnpj)
         cnpjs = await use_case.listar_cnpjs()
 
-        items = []
-        for layout in layouts:
-            n_regras = await regra_repo.contar_por_layout(layout.id)
-            items.append(_layout_to_response(layout, n_regras))
+        # Batch: resolve N+1 query contando regras para todos os layouts de uma vez
+        layout_ids = [l.id for l in layouts]
+        regras_count = await regra_repo.contar_por_layouts(layout_ids)
+        items = [_layout_to_response(l, regras_count.get(l.id, 0)) for l in layouts]
 
         return LayoutListResponse(items=items, total=total, cnpjs_disponiveis=cnpjs)
     except DomainError as e:
@@ -117,12 +118,10 @@ async def preview_excel(request: PreviewExcelRequest):
             if len(sheet_data) == 0:
                 raise HTTPException(status_code=400, detail="Planilha vazia")
 
-            # Cabeçalhos
             cabecalhos = []
             if request.linha_cabecalho < len(sheet_data):
                 cabecalhos = [str(c) if c is not None else f"Col_{i}" for i, c in enumerate(sheet_data[request.linha_cabecalho])]
 
-            # Linhas de dados (preview)
             inicio = request.linha_inicio_dados
             fim = min(inicio + request.max_linhas, len(sheet_data))
             linhas = []
@@ -146,6 +145,7 @@ async def preview_excel(request: PreviewExcelRequest):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Erro ao processar preview Excel: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail=f"Erro ao processar arquivo: {str(e)}")
 
 
@@ -164,17 +164,19 @@ def _serialize_cell(value):
 
 
 @router.get("/cnpjs", response_model=list[str])
-async def listar_cnpjs(session: AsyncSession = Depends(get_session)):
+async def listar_cnpjs(layout_repo=Depends(get_layout_repository)):
     """Lista CNPJs distintos que possuem layouts"""
-    layout_repo = SQLAlchemyLayoutRepository(session)
     use_case = ListarLayoutsUseCase(layout_repo)
     return await use_case.listar_cnpjs()
 
 
 @router.get("/{layout_id}", response_model=LayoutResponse)
-async def obter_layout(layout_id: str, session: AsyncSession = Depends(get_session)):
+async def obter_layout(
+    layout_id: str,
+    layout_repo=Depends(get_layout_repository),
+    regra_repo=Depends(get_regra_repository),
+):
     """Obtém um layout específico por ID"""
-    layout_repo, regra_repo = await _get_repos(session)
     use_case = ListarLayoutsUseCase(layout_repo)
 
     layout = await use_case.buscar_por_id(layout_id)
@@ -186,10 +188,12 @@ async def obter_layout(layout_id: str, session: AsyncSession = Depends(get_sessi
 
 
 @router.post("", response_model=LayoutResponse, status_code=201)
-async def criar_layout(request: CriarLayoutRequest, session: AsyncSession = Depends(get_session)):
+async def criar_layout(
+    request: CriarLayoutRequest,
+    layout_repo=Depends(get_layout_repository),
+):
     """Cria um novo layout de importação"""
     try:
-        layout_repo = SQLAlchemyLayoutRepository(session)
         use_case = CriarLayoutUseCase(layout_repo)
 
         layout = await use_case.executar(
@@ -212,11 +216,11 @@ async def criar_layout(request: CriarLayoutRequest, session: AsyncSession = Depe
 async def atualizar_layout(
     layout_id: str,
     request: AtualizarLayoutRequest,
-    session: AsyncSession = Depends(get_session),
+    layout_repo=Depends(get_layout_repository),
+    regra_repo=Depends(get_regra_repository),
 ):
     """Atualiza um layout existente"""
     try:
-        layout_repo, regra_repo = await _get_repos(session)
         use_case = AtualizarLayoutUseCase(layout_repo)
 
         layout = await use_case.executar(
@@ -243,11 +247,11 @@ async def atualizar_layout(
 async def clonar_layout(
     layout_id: str,
     request: ClonarLayoutRequest,
-    session: AsyncSession = Depends(get_session),
+    layout_repo=Depends(get_layout_repository),
+    regra_repo=Depends(get_regra_repository),
 ):
     """Clona um layout existente"""
     try:
-        layout_repo, regra_repo = await _get_repos(session)
         use_case = ClonarLayoutUseCase(layout_repo, regra_repo)
 
         layout = await use_case.executar(
@@ -265,10 +269,13 @@ async def clonar_layout(
 
 
 @router.delete("/{layout_id}", response_model=MensagemResponse)
-async def deletar_layout(layout_id: str, session: AsyncSession = Depends(get_session)):
+async def deletar_layout(
+    layout_id: str,
+    layout_repo=Depends(get_layout_repository),
+    regra_repo=Depends(get_regra_repository),
+):
     """Remove um layout e suas regras"""
     try:
-        layout_repo, regra_repo = await _get_repos(session)
         use_case = DeletarLayoutUseCase(layout_repo, regra_repo)
         await use_case.executar(layout_id)
         return MensagemResponse(mensagem="Layout removido com sucesso")
@@ -276,3 +283,60 @@ async def deletar_layout(layout_id: str, session: AsyncSession = Depends(get_ses
         raise HTTPException(status_code=404, detail="Layout não encontrado")
     except DomainError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+
+# ─── Endpoints Fase 4: Auto-Detecção e Test-Parse ────────────────
+
+@router.post("/detect", response_model=DetectarLayoutResponse)
+async def detectar_layout(request: DetectarLayoutRequest):
+    """Auto-detecta estrutura, tipos e mapeamento de um arquivo Excel"""
+    try:
+        use_case = DetectarLayoutUseCase()
+        resultado = use_case.executar(
+            arquivo_base64=request.arquivo_base64,
+            nome_aba=request.nome_aba,
+        )
+
+        return DetectarLayoutResponse(
+            config_planilha=resultado["config_planilha"],
+            colunas=[ColunaSugeridaResponse(**c) for c in resultado["colunas"]],
+            config_valor=resultado["config_valor"],
+            templates_regras=[TemplateRegraResponse(**t) for t in resultado["templates_regras"]],
+            preview_dados=resultado["preview_dados"],
+            abas=resultado["abas"],
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro na auto-detecção: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Erro na auto-detecção: {str(e)}")
+
+
+@router.post("/test-parse", response_model=TestParseResponse)
+async def test_parse(
+    request: TestParseRequest,
+    layout_repo=Depends(get_layout_repository),
+):
+    """Simula parsing completo sem gravar — preview dos lançamentos"""
+    try:
+        use_case = PreviewParseUseCase(layout_repository=layout_repo)
+        resultado = await use_case.executar(
+            arquivo_base64=request.arquivo_base64,
+            periodo_mes=request.periodo_mes,
+            periodo_ano=request.periodo_ano,
+            layout_id=request.layout_id,
+            layout_config=request.layout_config,
+            regras_conta=request.regras_conta,
+        )
+
+        return TestParseResponse(
+            lancamentos=[LancamentoPreviewResponse(**l) for l in resultado["lancamentos"]],
+            resumo=ResumoTestParseResponse(**resultado["resumo"]),
+            erros=[ErroTestParseResponse(**e) for e in resultado["erros"]],
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro no test-parse: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Erro no test-parse: {str(e)}")

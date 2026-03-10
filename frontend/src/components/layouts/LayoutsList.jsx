@@ -228,3 +228,5 @@ export const LayoutsList = () => {
     </div>
   );
 };
+
+export default LayoutsList;

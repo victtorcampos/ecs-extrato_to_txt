@@ -95,6 +95,11 @@ class RegraRepositoryPort(ABC):
     async def contar_por_layout(self, layout_id: str) -> int:
         """Conta regras de um layout"""
         pass
+
+    @abstractmethod
+    async def contar_por_layouts(self, layout_ids: list[str]) -> dict[str, int]:
+        """Conta regras para múltiplos layouts em batch (resolve N+1)"""
+        pass
     
     @abstractmethod
     async def obter_proxima_ordem(self, layout_id: str) -> int:

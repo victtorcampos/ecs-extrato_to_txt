@@ -19,6 +19,8 @@ from .dtos import (
     ConfigPlanilhaDTO,
     ConfigValorDTO,
     ConfigHistoricoPadraoDTO,
+    CondicaoContaLayoutDTO,
+    RegraContaLayoutDTO,
     CriarLayoutRequest,
     AtualizarLayoutRequest,
     ClonarLayoutRequest,
@@ -41,4 +43,15 @@ from .dtos import (
     AtualizarPerfilSaidaRequest,
     PerfilSaidaResponse,
     PerfilSaidaListResponse,
+    # Auto-Detection DTOs (Fase 4)
+    DetectarLayoutRequest,
+    ColunaSugeridaResponse,
+    TemplateRegraResponse,
+    DetectarLayoutResponse,
+    # Test-Parse DTOs (Fase 4)
+    TestParseRequest,
+    LancamentoPreviewResponse,
+    ResumoTestParseResponse,
+    ErroTestParseResponse,
+    TestParseResponse,
 )

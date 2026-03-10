@@ -323,3 +323,5 @@ export const PerfisSaidaList = () => {
     </div>
   );
 };
+
+export default PerfisSaidaList;

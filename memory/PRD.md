@@ -14,13 +14,27 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 ├── domain/          # Núcleo de negócio (Entidades, Value Objects, Exceções)
 ├── application/     # Casos de Uso e Portas (interfaces)
 ├── adapters/        # Implementações (REST, Repositórios, Parsers)
-└── config/          # Configuração e Database
+└── config/          # Configuração, Database, DI e Logging
+```
+
+### Frontend — Feature-Sliced Design (FSD) em migração
+```
+/app/frontend/src/
+├── app/             # Configuração global (futuro)
+├── pages/           # Páginas (futuro)
+├── features/        # Features isoladas (futuro: import-wizard, etc.)
+├── entities/        # Modelos compartilhados (futuro)
+├── shared/          # UI genérica, hooks, utils, API (futuro)
+├── components/      # Componentes atuais (migrar para FSD nas fases 2-3)
+├── services/        # API service (migrar para shared/api)
+└── lib/             # Utils (migrar para shared/lib)
 ```
 
 ### Stack Tecnológico
 - **Backend**: FastAPI + Python 3.11
 - **Database**: SQLite (SQLAlchemy async)
 - **Frontend**: React 18 + TailwindCSS + Shadcn/UI
+- **Design System**: SWISS_HIGH_CONTRAST (Manrope, IBM Plex Sans, JetBrains Mono)
 - **Email**: Resend (MOCK)
 
 ## Core Requirements (Implementado)
@@ -34,31 +48,60 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 - [x] Upload com Preview Excel e Layout Inline
 - [x] Múltiplos Perfis de Saída (TXT Domínio Sistemas)
 - [x] **Transformação Avançada de Dados** (2026-03-09)
-  - DynamicExcelParser com formatação de números, regex, concat, campos compostos, D/C embutido
 - [x] **Regras de Definição de Contas** (2026-03-10)
-  - RegraContaLayout com condições AND, operadores: positivo, negativo, igual, diferente, contem, dc_debito, dc_credito
-  - Frontend AccountRulesBuilder com templates: "Por sinal do valor", "Por coluna D/C", "Por conteúdo de coluna", "Por combinação de colunas"
-  - Integrado em LayoutForm.jsx e UploadForm.jsx
+- [x] **FASE 1 — Estabilização e Fundação Arquitetural** (2026-03-10)
+  - DI centralizado com FastAPI Depends() (B-05)
+  - CNPJ.formatar() no Value Object, removido duplicado dos controllers (B-03)
+  - Logging estruturado JSON em todo o backend (B-07)
+  - Índice ix_lotes_layout_id no banco (B-06)
+  - Rota /home redireciona para / (F-09)
+  - Página 404 funcional (F-11)
+  - Estrutura FSD criada no frontend (F-02 início)
+- [x] **FASE 2 — Migração Estrutural + Performance** (2026-03-10)
+  - N+1 Query resolvida: contar_por_layouts batch no RegraRepository (B-01)
+  - api.js segmentado em módulos por domínio (F-06)
+  - Custom hooks: useAsync, useDownload, useNotification (F-03/F-04/F-05/F-07)
+  - Hooks integrados em LotesList e LoteDetail
 
 ## Backlog (P0/P1/P2)
 
-### P0 - Crítico
-- [x] MVP completo
-- [x] CRUD Mapeamentos
-- [x] Layouts de Importação + Regras de Processamento
-- [x] Upload com Preview Excel, Layout Inline
-- [x] Perfis de Saída + Gerador Domínio Sistemas TXT
-- [x] Transformação Avançada de Dados (DynamicExcelParser + UI)
-- [x] Regras de Definição de Contas (AccountRulesBuilder + backend engine)
+### P0 - Concluído (Refatoração v2 - 5 Fases)
+- [x] Fase 1 — Estabilização e Fundação Arquitetural
+- [x] Fase 2 — Migração Estrutural + Correções de Performance
+- [x] Fase 3 — FSD Completo + Robustez Backend
+- [x] Fase 4 — Feature v2: Auto-Detecção + Preview
+- [x] Fase 5 — Refinamento, OFX prep, Validação Final
+  - except Exception: pass eliminado, substituído por logging (B-08)
+  - TxtGenerator externalizado em TxtConfig dataclass (B-09)
+  - Lazy loading com React.lazy + Suspense para 9 rotas (F-10)
+  - FSD barrel exports: 7 features + 3 shared (F-02 final)
+- [x] Fase 4 — Feature v2: Auto-Detecção + Preview (2026-03-10)
+  - **DetectarLayoutUseCase**: auto-detecção de estrutura, tipos de coluna, mapeamento e ConfigValor
+  - **PreviewParseUseCase**: simulação de parsing sem gravar
+  - **Endpoints**: POST /detect e POST /test-parse
+  - **Frontend Import Wizard**: 4 steps (Upload → Revisão → Contas/Regras → Preview)
+  - Templates contextuais de regras baseados nos dados reais
+  - Bug fix: tipo_dado mapping normalizado entre detect e layout entities
+- [x] Fase 5 — Refinamento, OFX prep, Validação Final (2026-03-10)
+  - **OFXParserPort**: contrato (TransacaoOFX, ExtratoOFX, parse/validar)
+  - **Perfil de saída integrado**: ProcessarLoteUseCase._gerar_saida() usa OutputGeneratorFactory
+  - **Wizard**: seletor de perfil de saída com pre-seleção do perfil padrão
+  - DI factory atualizado com perfil_saida_repository
+  - DetectarLayoutUseCase (auto-detecção de estrutura, tipos, mapeamento)
+  - PreviewParseUseCase (simulação sem gravar)
+  - Endpoints /detect e /test-parse
+  - Wizard frontend 4 steps (Upload → Revisão → Contas/Regras → Preview)
+  - Templates contextuais de regras
+- [ ] Fase 5 — Refinamento, OFX prep, Validação Final
+  - Port OFXParserPort (contrato)
+  - Integrar perfil de saída no processamento
+  - Polir UX do Wizard
+  - Validação end-to-end dos 7 cenários
 
 ### P1 - Importante
-- [ ] Integrar o gerador de saída (perfil_saida_id) no ProcessarLoteUseCase
-- [ ] Construtor visual de regras aprimorado (RegraBuilder.jsx) para regras de processamento
-- [ ] Preview de parsing com layout + arquivo de exemplo
 - [ ] Integração real de envio de e-mails (Resend)
 
 ### P2 - Melhorias
-- [ ] Clonagem avançada de layouts com UI dedicada
 - [ ] Geradores de saída XML e JSON
 - [ ] Migração para Celery/Redis
 - [ ] Histórico de processamentos / relatórios PDF
@@ -92,8 +135,8 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 | GET | /api/v1/import-layouts | Listar layouts |
 | GET | /api/v1/import-layouts/campos-disponiveis | Campos disponíveis |
 | GET | /api/v1/import-layouts/{id} | Obter layout |
-| POST | /api/v1/import-layouts | Criar layout (com regras_conta) |
-| PUT | /api/v1/import-layouts/{id} | Atualizar layout (com regras_conta) |
+| POST | /api/v1/import-layouts | Criar layout |
+| PUT | /api/v1/import-layouts/{id} | Atualizar layout |
 | POST | /api/v1/import-layouts/{id}/clone | Clonar layout |
 | DELETE | /api/v1/import-layouts/{id} | Excluir layout |
 | POST | /api/v1/import-layouts/preview-excel | Preview do Excel |
@@ -113,3 +156,9 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 | POST | /api/v1/output-profiles | Criar perfil |
 | PUT | /api/v1/output-profiles/{id} | Atualizar perfil |
 | DELETE | /api/v1/output-profiles/{id} | Excluir perfil |
+
+## Documentos de Referência
+- `/app/prompt_refatoracao_v2.md` — Requisitos de refatoração (5 fases)
+- `/app/Ideia_Layout_de_Importacaov2.md` — Visão do Layout v2 (7 cenários)
+- `/app/Ideia_Layout_de_Importacao.md` — Análise v1
+- `/app/design_guidelines.json` — Design System SWISS_HIGH_CONTRAST

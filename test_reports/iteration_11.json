@@ -1,0 +1,95 @@
+{
+  "summary": "Phase 4 (Auto-Detect + Preview) testing completed. All 20 backend tests pass (100%). Frontend Import Wizard works correctly with 4-step stepper. Found and fixed 1 bug: tipo_dado mapping issue in ColunaLayout.from_dict that prevented test-parse with inline config from working.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "✅ GET /api/health - Returns healthy status",
+    "✅ GET /api/v1/import-layouts - Returns layouts list with total_regras",
+    "✅ GET /api/v1/lotes/estatisticas - Returns statistics",
+    "✅ POST /api/v1/import-layouts/detect - Basic auto-detection works",
+    "✅ POST /api/v1/import-layouts/detect - config_planilha structure correct (nome_aba, linha_cabecalho, linha_inicio_dados)",
+    "✅ POST /api/v1/import-layouts/detect - colunas structure correct (coluna_excel, nome_cabecalho, campo_destino, tipo_dado, confianca)",
+    "✅ POST /api/v1/import-layouts/detect - Date columns identified (tipo_dado=data)",
+    "✅ POST /api/v1/import-layouts/detect - Valor columns identified (decimal types)",
+    "✅ POST /api/v1/import-layouts/detect - config_valor with tipo_sinal returned",
+    "✅ POST /api/v1/import-layouts/detect - templates_regras list returned",
+    "✅ POST /api/v1/import-layouts/detect - preview_dados (5 rows max) returned",
+    "✅ POST /api/v1/import-layouts/detect - Invalid base64 handled with 400/500 error",
+    "✅ POST /api/v1/import-layouts/test-parse - Works with existing layout_id",
+    "✅ POST /api/v1/import-layouts/test-parse - resumo structure correct (total, ok, fora_periodo, sem_conta)",
+    "✅ POST /api/v1/import-layouts/test-parse - lancamentos structure correct (linha, status, data, valor, etc.)",
+    "✅ POST /api/v1/import-layouts/test-parse - Works with inline layout_config (AFTER FIX)",
+    "✅ POST /api/v1/import-layouts/test-parse - Missing params returns 400",
+    "✅ POST /api/v1/import-layouts/test-parse - Invalid layout_id returns 400",
+    "✅ POST /api/v1/import-layouts/test-parse - fora_periodo detection works",
+    "✅ Integration: detect → test-parse flow works end-to-end",
+    "✅ Frontend: Dashboard loads correctly",
+    "✅ Frontend: /upload shows Import Wizard with 4-step stepper",
+    "✅ Frontend: Wizard Step 1 has file dropzone, CNPJ input, month/year selects, email input",
+    "✅ Frontend: /upload/classic loads legacy upload form",
+    "✅ Frontend: /layouts page loads correctly",
+    "✅ Frontend: /lotes page loads correctly",
+    "✅ Frontend: /mapeamentos page loads correctly",
+    "✅ Frontend: /perfis-saida page loads correctly"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_phase4_detect.py",
+    "/app/test_reports/pytest/pytest_phase4_detect.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "BUG FIXED: ColunaLayout.from_dict was failing when tipo_dado='data' (Portuguese) was passed from detect endpoint. The TipoDado enum expects 'date' (English). Added mapping in from_dict to convert detect types ('data', 'decimal_br', 'decimal_dc', 'cnpj_cpf', 'campo_composto', 'tipo_dc') to valid enum values ('date', 'decimal', 'string')."
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_phase4_detect.py",
+    "/app/backend/src/domain/entities/layout_entities.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (20/20 tests passed)",
+    "frontend": "100% (8/8 navigation tests passed)"
+  },
+
+  "test_credentials": "No auth required",
+
+  "seed_data_creation": "None - used existing 2 layouts and sample file at /app/sample_input.xls",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": true,
+
+  "context_for_next_testing_agent": "Phase 4 verified: (1) POST /api/v1/import-layouts/detect returns auto-detected layout with config_planilha, colunas (34 columns for sample file), config_valor, templates_regras, preview_dados. (2) POST /api/v1/import-layouts/test-parse works with both layout_id and inline layout_config, returns lancamentos with status (ok/fora_periodo/sem_conta) and resumo counts. (3) Frontend Import Wizard at /upload has 4 steps: Upload → Revisão → Contas → Preview. (4) Legacy upload at /upload/classic still works. (5) Fixed tipo_dado mapping bug in ColunaLayout.from_dict.",
+
+  "mocked_apis": {
+    "email_sender": "Email sending is MOCKED (ResendEmailSender)"
+  },
+
+  "phase4_verification": {
+    "detect_endpoint": "VERIFIED - Returns config_planilha, colunas, config_valor, templates_regras, preview_dados, abas",
+    "test_parse_with_layout_id": "VERIFIED - Returns lancamentos, resumo, erros",
+    "test_parse_with_inline_config": "VERIFIED (after bug fix) - Same response as layout_id version",
+    "import_wizard": "VERIFIED - 4-step stepper (Upload, Revisão, Contas, Preview), all Step 1 inputs present",
+    "regression": "VERIFIED - All existing pages (Dashboard, Layouts, Lotes, Mapeamentos, Perfis) still work"
+  },
+
+  "bug_fixed": {
+    "issue": "test-parse with inline layout_config failed with 'data is not a valid TipoDado'",
+    "root_cause": "detect_usecases.py returns tipo_dado values in Portuguese/custom format (e.g., 'data', 'decimal_br') but TipoDado enum expects English values ('date', 'decimal')",
+    "fix_location": "/app/backend/src/domain/entities/layout_entities.py:ColunaLayout.from_dict",
+    "fix_description": "Added tipo_dado_map to normalize detect types to valid enum values before creating ColunaLayout"
+  }
+}

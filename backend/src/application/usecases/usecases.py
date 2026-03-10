@@ -13,6 +13,9 @@ from src.domain.exceptions import (
 from src.application.ports.repositories import LoteRepositoryPort, MapeamentoContaRepositoryPort
 from src.application.ports.repositories.layout_repository_port import LayoutRepositoryPort
 from src.application.ports.services import ExcelParserPort, TxtGeneratorPort, EmailSenderPort
+from src.config.logging_config import get_logger
+
+logger = get_logger("usecases")
 
 
 class CriarProtocoloUseCase:
@@ -79,6 +82,7 @@ class ProcessarLoteUseCase:
         email_sender: EmailSenderPort,
         layout_repository: LayoutRepositoryPort = None,
         dynamic_parser=None,
+        perfil_saida_repository=None,
     ):
         self.lote_repository = lote_repository
         self.mapeamento_repository = mapeamento_repository
@@ -87,6 +91,7 @@ class ProcessarLoteUseCase:
         self.email_sender = email_sender
         self.layout_repository = layout_repository
         self.dynamic_parser = dynamic_parser
+        self.perfil_saida_repository = perfil_saida_repository
     
     async def executar(self, lote_id: str) -> Lote:
         """Processa um lote existente"""
@@ -146,12 +151,12 @@ class ProcessarLoteUseCase:
                 await self.lote_repository.atualizar(lote)
                 return lote
             
-            # Gerar arquivo TXT
-            arquivo_txt = self.txt_generator.gerar(lancamentos, lote.cnpj, mapeamentos_dict)
+            # Gerar arquivo de saída usando perfil de saída (se disponível) ou TXT padrão
+            arquivo_saida = await self._gerar_saida(lote, lancamentos, mapeamentos_dict)
             
             # Converter para base64
             import base64
-            lote.arquivo_saida = base64.b64encode(arquivo_txt.encode('utf-8')).decode('utf-8')
+            lote.arquivo_saida = base64.b64encode(arquivo_saida.encode('utf-8')).decode('utf-8')
             lote.status = StatusLote.CONCLUIDO
             lote.processado_em = datetime.now()
             lote.atualizado_em = datetime.now()
@@ -172,8 +177,8 @@ class ProcessarLoteUseCase:
                         <p>Acesse o sistema para baixar o arquivo gerado.</p>
                         """
                     )
-            except Exception:
-                pass  # Não falhar se email não enviar
+            except Exception as e:
+                logger.warning(f"Falha ao enviar email de notificação para {lote.email_notificacao}: {e}")
             
             return lote
             
@@ -198,6 +203,26 @@ class ProcessarLoteUseCase:
                 return self.dynamic_parser.parse(lote.arquivo_original, layout)
         # Fallback: parser padrão hardcoded
         return self.excel_parser.parse(lote.arquivo_original, lote.nome_layout)
+
+    async def _gerar_saida(self, lote: Lote, lancamentos: List[Lancamento], mapeamentos: Dict[str, str]) -> str:
+        """Gera arquivo de saída usando perfil de saída (se disponível) ou TXT padrão"""
+        if lote.perfil_saida_id and self.perfil_saida_repository:
+            try:
+                perfil = await self.perfil_saida_repository.buscar_por_id(lote.perfil_saida_id)
+                if perfil:
+                    from src.adapters.outbound.output_generators import OutputGeneratorFactory
+                    gerador = OutputGeneratorFactory.obter_gerador(
+                        perfil.sistema_destino.value,
+                        perfil.formato.value,
+                    )
+                    erros = gerador.validar(lancamentos, lote.cnpj, mapeamentos, perfil.config.to_dict())
+                    if erros:
+                        logger.warning(f"Validação do perfil de saída retornou erros: {erros}")
+                    return gerador.gerar(lancamentos, lote.cnpj, mapeamentos, perfil.config.to_dict())
+            except Exception as e:
+                logger.warning(f"Erro ao usar perfil de saída {lote.perfil_saida_id}, usando TXT padrão: {e}")
+        # Fallback: TXT generator padrão
+        return self.txt_generator.gerar(lancamentos, lote.cnpj, mapeamentos)
 
 
 class ResolverPendenciaUseCase:
