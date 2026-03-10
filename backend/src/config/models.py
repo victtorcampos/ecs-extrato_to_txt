@@ -16,7 +16,7 @@ class LoteModel(Base):
     periodo_ano = Column(Integer)
     email_notificacao = Column(String(255))
     nome_layout = Column(String(100))
-    layout_id = Column(String(36), nullable=True)  # Referência ao layout usado
+    layout_id = Column(String(36), nullable=True, index=True)  # Referência ao layout usado
     perfil_saida_id = Column(String(36), nullable=True)  # Referência ao perfil de saída
     codigo_matriz_filial = Column(String(50))
     

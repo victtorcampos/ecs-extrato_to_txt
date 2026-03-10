@@ -1,7 +1,6 @@
 """Controllers REST para API de Perfis de Saída"""
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.adapters.inbound.rest.dto import (
     CriarPerfilSaidaRequest,
@@ -10,7 +9,6 @@ from src.adapters.inbound.rest.dto import (
     PerfilSaidaListResponse,
     MensagemResponse,
 )
-from src.adapters.outbound.repositories.sqlalchemy import SQLAlchemyPerfilSaidaRepository
 from src.adapters.outbound.output_generators import OutputGeneratorFactory
 from src.application.usecases import (
     CriarPerfilSaidaUseCase,
@@ -20,7 +18,7 @@ from src.application.usecases import (
 )
 from src.domain.entities import PerfilSaida, SISTEMAS_DISPONIVEIS, FORMATOS_DISPONIVEIS
 from src.domain.exceptions import DomainError
-from src.config.database import get_session
+from src.config.dependencies import get_perfil_saida_repository
 
 
 router = APIRouter(prefix="/api/v1/output-profiles", tags=["Output Profiles"])
@@ -49,10 +47,9 @@ def _perfil_to_response(perfil: PerfilSaida) -> PerfilSaidaResponse:
 async def listar_perfis(
     apenas_ativos: bool = Query(False),
     sistema: Optional[str] = Query(None),
-    session: AsyncSession = Depends(get_session),
+    repo=Depends(get_perfil_saida_repository),
 ):
     """Lista perfis de saída"""
-    repo = SQLAlchemyPerfilSaidaRepository(session)
     use_case = ListarPerfisSaidaUseCase(repo)
     perfis = await use_case.listar(apenas_ativos=apenas_ativos, sistema=sistema)
     total = await use_case.contar(sistema=sistema)
@@ -80,9 +77,8 @@ async def sistemas_disponiveis():
 
 
 @router.get("/{perfil_id}", response_model=PerfilSaidaResponse)
-async def obter_perfil(perfil_id: str, session: AsyncSession = Depends(get_session)):
+async def obter_perfil(perfil_id: str, repo=Depends(get_perfil_saida_repository)):
     """Obtém um perfil de saída específico"""
-    repo = SQLAlchemyPerfilSaidaRepository(session)
     use_case = ListarPerfisSaidaUseCase(repo)
     perfil = await use_case.buscar_por_id(perfil_id)
     if not perfil:
@@ -91,10 +87,9 @@ async def obter_perfil(perfil_id: str, session: AsyncSession = Depends(get_sessi
 
 
 @router.post("", response_model=PerfilSaidaResponse, status_code=201)
-async def criar_perfil(request: CriarPerfilSaidaRequest, session: AsyncSession = Depends(get_session)):
+async def criar_perfil(request: CriarPerfilSaidaRequest, repo=Depends(get_perfil_saida_repository)):
     """Cria um novo perfil de saída"""
     try:
-        repo = SQLAlchemyPerfilSaidaRepository(session)
         use_case = CriarPerfilSaidaUseCase(repo)
         perfil = await use_case.executar(
             nome=request.nome,
@@ -113,11 +108,10 @@ async def criar_perfil(request: CriarPerfilSaidaRequest, session: AsyncSession =
 async def atualizar_perfil(
     perfil_id: str,
     request: AtualizarPerfilSaidaRequest,
-    session: AsyncSession = Depends(get_session),
+    repo=Depends(get_perfil_saida_repository),
 ):
     """Atualiza um perfil de saída existente"""
     try:
-        repo = SQLAlchemyPerfilSaidaRepository(session)
         use_case = AtualizarPerfilSaidaUseCase(repo)
         perfil = await use_case.executar(
             perfil_id=perfil_id,
@@ -133,10 +127,9 @@ async def atualizar_perfil(
 
 
 @router.delete("/{perfil_id}", response_model=MensagemResponse)
-async def deletar_perfil(perfil_id: str, session: AsyncSession = Depends(get_session)):
+async def deletar_perfil(perfil_id: str, repo=Depends(get_perfil_saida_repository)):
     """Remove um perfil de saída"""
     try:
-        repo = SQLAlchemyPerfilSaidaRepository(session)
         use_case = DeletarPerfilSaidaUseCase(repo)
         await use_case.executar(perfil_id)
         return MensagemResponse(mensagem="Perfil de saída removido com sucesso")

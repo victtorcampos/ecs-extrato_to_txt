@@ -11,6 +11,9 @@ from python_calamine import CalamineWorkbook
 from src.domain.entities import Lancamento
 from src.domain.entities.layout_entities import LayoutExcel, ColunaLayout, ConfigValor, ConfigPlanilha, RegraContaLayout, CondicaoContaLayout
 from src.domain.exceptions import ArquivoExcelInvalidoError
+from src.config.logging_config import get_logger
+
+logger = get_logger("dynamic_parser")
 
 
 def _col_letter_to_index(col: str) -> int:
@@ -260,7 +263,7 @@ class DynamicExcelParser:
                         if lancamento:
                             lancamentos.append(lancamento)
                     except Exception as e:
-                        print(f"[DynamicParser] Erro na linha {row_idx}: {e}")
+                        logger.warning(f"Erro na linha {row_idx}: {e}")
                         continue
 
                 return lancamentos

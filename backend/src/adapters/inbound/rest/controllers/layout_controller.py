@@ -4,7 +4,6 @@ import tempfile
 import os
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.adapters.inbound.rest.dto import (
     CriarLayoutRequest,
@@ -16,10 +15,6 @@ from src.adapters.inbound.rest.dto import (
     PreviewExcelRequest,
     PreviewExcelResponse,
 )
-from src.adapters.outbound.repositories.sqlalchemy import (
-    SQLAlchemyLayoutRepository,
-    SQLAlchemyRegraRepository,
-)
 from src.application.usecases import (
     CriarLayoutUseCase,
     AtualizarLayoutUseCase,
@@ -30,16 +25,12 @@ from src.application.usecases import (
 from src.domain.entities import LayoutExcel
 from src.domain.exceptions import DomainError, LayoutNaoEncontradoError
 from src.domain.value_objects import get_campos_disponiveis
-from src.config.database import get_session
+from src.config.dependencies import get_layout_repository, get_regra_repository
+from src.config.logging_config import get_logger
 
+logger = get_logger("layout_controller")
 
 router = APIRouter(prefix="/api/v1/import-layouts", tags=["Import Layouts"])
-
-
-async def _get_repos(session: AsyncSession):
-    layout_repo = SQLAlchemyLayoutRepository(session)
-    regra_repo = SQLAlchemyRegraRepository(session)
-    return layout_repo, regra_repo
 
 
 def _layout_to_response(layout: LayoutExcel, total_regras: int = 0) -> LayoutResponse:
@@ -67,11 +58,11 @@ async def listar_layouts(
     apenas_ativos: bool = Query(False, description="Mostrar apenas ativos"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    session: AsyncSession = Depends(get_session),
+    layout_repo=Depends(get_layout_repository),
+    regra_repo=Depends(get_regra_repository),
 ):
     """Lista layouts de importação"""
     try:
-        layout_repo, regra_repo = await _get_repos(session)
         use_case = ListarLayoutsUseCase(layout_repo)
 
         layouts = await use_case.listar(cnpj=cnpj, apenas_ativos=apenas_ativos, skip=skip, limit=limit)
@@ -117,12 +108,10 @@ async def preview_excel(request: PreviewExcelRequest):
             if len(sheet_data) == 0:
                 raise HTTPException(status_code=400, detail="Planilha vazia")
 
-            # Cabeçalhos
             cabecalhos = []
             if request.linha_cabecalho < len(sheet_data):
                 cabecalhos = [str(c) if c is not None else f"Col_{i}" for i, c in enumerate(sheet_data[request.linha_cabecalho])]
 
-            # Linhas de dados (preview)
             inicio = request.linha_inicio_dados
             fim = min(inicio + request.max_linhas, len(sheet_data))
             linhas = []
@@ -146,6 +135,7 @@ async def preview_excel(request: PreviewExcelRequest):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Erro ao processar preview Excel: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail=f"Erro ao processar arquivo: {str(e)}")
 
 
@@ -164,17 +154,19 @@ def _serialize_cell(value):
 
 
 @router.get("/cnpjs", response_model=list[str])
-async def listar_cnpjs(session: AsyncSession = Depends(get_session)):
+async def listar_cnpjs(layout_repo=Depends(get_layout_repository)):
     """Lista CNPJs distintos que possuem layouts"""
-    layout_repo = SQLAlchemyLayoutRepository(session)
     use_case = ListarLayoutsUseCase(layout_repo)
     return await use_case.listar_cnpjs()
 
 
 @router.get("/{layout_id}", response_model=LayoutResponse)
-async def obter_layout(layout_id: str, session: AsyncSession = Depends(get_session)):
+async def obter_layout(
+    layout_id: str,
+    layout_repo=Depends(get_layout_repository),
+    regra_repo=Depends(get_regra_repository),
+):
     """Obtém um layout específico por ID"""
-    layout_repo, regra_repo = await _get_repos(session)
     use_case = ListarLayoutsUseCase(layout_repo)
 
     layout = await use_case.buscar_por_id(layout_id)
@@ -186,10 +178,12 @@ async def obter_layout(layout_id: str, session: AsyncSession = Depends(get_sessi
 
 
 @router.post("", response_model=LayoutResponse, status_code=201)
-async def criar_layout(request: CriarLayoutRequest, session: AsyncSession = Depends(get_session)):
+async def criar_layout(
+    request: CriarLayoutRequest,
+    layout_repo=Depends(get_layout_repository),
+):
     """Cria um novo layout de importação"""
     try:
-        layout_repo = SQLAlchemyLayoutRepository(session)
         use_case = CriarLayoutUseCase(layout_repo)
 
         layout = await use_case.executar(
@@ -212,11 +206,11 @@ async def criar_layout(request: CriarLayoutRequest, session: AsyncSession = Depe
 async def atualizar_layout(
     layout_id: str,
     request: AtualizarLayoutRequest,
-    session: AsyncSession = Depends(get_session),
+    layout_repo=Depends(get_layout_repository),
+    regra_repo=Depends(get_regra_repository),
 ):
     """Atualiza um layout existente"""
     try:
-        layout_repo, regra_repo = await _get_repos(session)
         use_case = AtualizarLayoutUseCase(layout_repo)
 
         layout = await use_case.executar(
@@ -243,11 +237,11 @@ async def atualizar_layout(
 async def clonar_layout(
     layout_id: str,
     request: ClonarLayoutRequest,
-    session: AsyncSession = Depends(get_session),
+    layout_repo=Depends(get_layout_repository),
+    regra_repo=Depends(get_regra_repository),
 ):
     """Clona um layout existente"""
     try:
-        layout_repo, regra_repo = await _get_repos(session)
         use_case = ClonarLayoutUseCase(layout_repo, regra_repo)
 
         layout = await use_case.executar(
@@ -265,10 +259,13 @@ async def clonar_layout(
 
 
 @router.delete("/{layout_id}", response_model=MensagemResponse)
-async def deletar_layout(layout_id: str, session: AsyncSession = Depends(get_session)):
+async def deletar_layout(
+    layout_id: str,
+    layout_repo=Depends(get_layout_repository),
+    regra_repo=Depends(get_regra_repository),
+):
     """Remove um layout e suas regras"""
     try:
-        layout_repo, regra_repo = await _get_repos(session)
         use_case = DeletarLayoutUseCase(layout_repo, regra_repo)
         await use_case.executar(layout_id)
         return MensagemResponse(mensagem="Layout removido com sucesso")

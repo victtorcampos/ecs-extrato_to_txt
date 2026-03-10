@@ -1,7 +1,5 @@
 """Controllers REST para API de Regras de Processamento"""
-from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.adapters.inbound.rest.dto import (
     CriarRegraRequest,
@@ -11,22 +9,16 @@ from src.adapters.inbound.rest.dto import (
     RegraListResponse,
     MensagemResponse,
 )
-from src.adapters.outbound.repositories.sqlalchemy import (
-    SQLAlchemyLayoutRepository,
-    SQLAlchemyRegraRepository,
-)
 from src.application.usecases import (
     CriarRegraUseCase,
     AtualizarRegraUseCase,
     ListarRegrasUseCase,
     ReordenarRegrasUseCase,
     DeletarRegraUseCase,
-    TestarRegraUseCase,
-    AplicarRegrasUseCase,
 )
 from src.domain.entities import RegraProcessamento
 from src.domain.exceptions import DomainError, RegraNaoEncontradaError, LayoutNaoEncontradoError
-from src.config.database import get_session
+from src.config.dependencies import get_layout_repository, get_regra_repository
 
 
 router = APIRouter(prefix="/api/v1/import-layouts/{layout_id}/rules", tags=["Processing Rules"])
@@ -54,13 +46,11 @@ def _regra_to_response(regra: RegraProcessamento) -> RegraResponse:
 async def listar_regras(
     layout_id: str,
     apenas_ativas: bool = Query(False),
-    session: AsyncSession = Depends(get_session),
+    regra_repo=Depends(get_regra_repository),
 ):
     """Lista regras de um layout"""
     try:
-        regra_repo = SQLAlchemyRegraRepository(session)
         use_case = ListarRegrasUseCase(regra_repo)
-
         regras = await use_case.listar_por_layout(layout_id, apenas_ativas)
         total = await use_case.contar_por_layout(layout_id)
 
@@ -73,15 +63,16 @@ async def listar_regras(
 
 
 @router.get("/{regra_id}", response_model=RegraResponse)
-async def obter_regra(layout_id: str, regra_id: str, session: AsyncSession = Depends(get_session)):
+async def obter_regra(
+    layout_id: str,
+    regra_id: str,
+    regra_repo=Depends(get_regra_repository),
+):
     """Obtém uma regra específica"""
-    regra_repo = SQLAlchemyRegraRepository(session)
     use_case = ListarRegrasUseCase(regra_repo)
-
     regra = await use_case.buscar_por_id(regra_id)
     if not regra or regra.layout_id != layout_id:
         raise HTTPException(status_code=404, detail="Regra não encontrada")
-
     return _regra_to_response(regra)
 
 
@@ -89,12 +80,11 @@ async def obter_regra(layout_id: str, regra_id: str, session: AsyncSession = Dep
 async def criar_regra(
     layout_id: str,
     request: CriarRegraRequest,
-    session: AsyncSession = Depends(get_session),
+    layout_repo=Depends(get_layout_repository),
+    regra_repo=Depends(get_regra_repository),
 ):
     """Cria uma nova regra de processamento"""
     try:
-        layout_repo = SQLAlchemyLayoutRepository(session)
-        regra_repo = SQLAlchemyRegraRepository(session)
         use_case = CriarRegraUseCase(regra_repo, layout_repo)
 
         regra = await use_case.executar(
@@ -121,11 +111,10 @@ async def atualizar_regra(
     layout_id: str,
     regra_id: str,
     request: AtualizarRegraRequest,
-    session: AsyncSession = Depends(get_session),
+    regra_repo=Depends(get_regra_repository),
 ):
     """Atualiza uma regra existente"""
     try:
-        regra_repo = SQLAlchemyRegraRepository(session)
         use_case = AtualizarRegraUseCase(regra_repo)
 
         regra = await use_case.executar(
@@ -151,13 +140,11 @@ async def atualizar_regra(
 async def reordenar_regras(
     layout_id: str,
     request: ReordenarRegrasRequest,
-    session: AsyncSession = Depends(get_session),
+    regra_repo=Depends(get_regra_repository),
 ):
     """Reordena as regras de um layout"""
     try:
-        regra_repo = SQLAlchemyRegraRepository(session)
         use_case = ReordenarRegrasUseCase(regra_repo)
-
         await use_case.executar(layout_id, request.ordem_ids)
         return MensagemResponse(mensagem="Regras reordenadas com sucesso")
     except DomainError as e:
@@ -165,10 +152,13 @@ async def reordenar_regras(
 
 
 @router.delete("/{regra_id}", response_model=MensagemResponse)
-async def deletar_regra(layout_id: str, regra_id: str, session: AsyncSession = Depends(get_session)):
+async def deletar_regra(
+    layout_id: str,
+    regra_id: str,
+    regra_repo=Depends(get_regra_repository),
+):
     """Remove uma regra"""
     try:
-        regra_repo = SQLAlchemyRegraRepository(session)
         use_case = DeletarRegraUseCase(regra_repo)
         await use_case.executar(regra_id)
         return MensagemResponse(mensagem="Regra removida com sucesso")

@@ -10,6 +10,9 @@ from python_calamine import CalamineWorkbook
 from src.application.ports.services import ExcelParserPort
 from src.domain.entities import Lancamento
 from src.domain.exceptions import ArquivoExcelInvalidoError
+from src.config.logging_config import get_logger
+
+logger = get_logger("excel_parser")
 
 
 class CalamineExcelParser(ExcelParserPort):
@@ -67,7 +70,7 @@ class CalamineExcelParser(ExcelParserPort):
                             lancamentos.append(lancamento)
                     except Exception as e:
                         # Log erro mas continua processando
-                        print(f"Erro na linha {row_idx}: {e}")
+                        logger.warning(f"Erro na linha {row_idx}: {e}")
                         continue
                 
                 return lancamentos

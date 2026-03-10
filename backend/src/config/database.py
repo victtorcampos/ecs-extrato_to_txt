@@ -28,6 +28,9 @@ async def get_session() -> AsyncSession:
 
 
 async def init_db():
+    from src.config.logging_config import get_logger
+    logger = get_logger("database")
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         # Migração: adicionar coluna layout_id na tabela lotes se não existir
@@ -42,3 +45,9 @@ async def init_db():
         layout_cols = [row[1] for row in result2.fetchall()]
         if "regras_conta_json" not in layout_cols:
             await conn.execute(text("ALTER TABLE layouts_excel ADD COLUMN regras_conta_json JSON DEFAULT '[]'"))
+        # Migração: criar índice em layout_id da tabela lotes (B-06)
+        try:
+            await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_lotes_layout_id ON lotes(layout_id)"))
+        except Exception:
+            pass  # Index may already exist
+        logger.info("Database initialized successfully")
