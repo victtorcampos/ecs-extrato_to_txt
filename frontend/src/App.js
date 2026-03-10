@@ -1,16 +1,29 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import './App.css';
 
 import { Layout } from './components/layout';
 import { Dashboard } from './components/dashboard';
-import { UploadForm } from './components/upload';
-import { LotesList, LoteDetail } from './components/lotes';
-import { PendenciasResolver } from './components/pendencias';
-import { MapeamentosList } from './components/mapeamentos';
-import { LayoutsList, LayoutForm, LayoutDetail } from './components/layouts';
-import { PerfisSaidaList } from './components/perfis-saida';
+
+// Lazy-loaded pages (F-10)
+const UploadForm = lazy(() => import('./components/upload/UploadForm'));
+const LotesList = lazy(() => import('./components/lotes/LotesList'));
+const LoteDetail = lazy(() => import('./components/lotes/LoteDetail'));
+const PendenciasResolver = lazy(() => import('./components/pendencias/PendenciasResolver'));
+const MapeamentosList = lazy(() => import('./components/mapeamentos/MapeamentosList'));
+const LayoutsList = lazy(() => import('./components/layouts/LayoutsList'));
+const LayoutForm = lazy(() => import('./components/layouts/LayoutForm'));
+const LayoutDetail = lazy(() => import('./components/layouts/LayoutDetail'));
+const PerfisSaidaList = lazy(() => import('./components/perfis-saida/PerfisSaidaList'));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center py-20" data-testid="page-loader">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900" />
+    </div>
+  );
+}
 
 function NotFoundPage() {
   return (
@@ -29,21 +42,23 @@ function App() {
     <BrowserRouter>
       <Toaster position="top-right" richColors />
       <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/home" element={<Navigate to="/" replace />} />
-          <Route path="/upload" element={<UploadForm />} />
-          <Route path="/lotes" element={<LotesList />} />
-          <Route path="/lotes/:id" element={<LoteDetail />} />
-          <Route path="/lotes/:id/pendencias" element={<PendenciasResolver />} />
-          <Route path="/mapeamentos" element={<MapeamentosList />} />
-          <Route path="/layouts" element={<LayoutsList />} />
-          <Route path="/layouts/novo" element={<LayoutForm />} />
-          <Route path="/layouts/:id" element={<LayoutDetail />} />
-          <Route path="/layouts/:id/editar" element={<LayoutForm />} />
-          <Route path="/perfis-saida" element={<PerfisSaidaList />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/home" element={<Navigate to="/" replace />} />
+            <Route path="/upload" element={<UploadForm />} />
+            <Route path="/lotes" element={<LotesList />} />
+            <Route path="/lotes/:id" element={<LoteDetail />} />
+            <Route path="/lotes/:id/pendencias" element={<PendenciasResolver />} />
+            <Route path="/mapeamentos" element={<MapeamentosList />} />
+            <Route path="/layouts" element={<LayoutsList />} />
+            <Route path="/layouts/novo" element={<LayoutForm />} />
+            <Route path="/layouts/:id" element={<LayoutDetail />} />
+            <Route path="/layouts/:id/editar" element={<LayoutForm />} />
+            <Route path="/perfis-saida" element={<PerfisSaidaList />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
       </Layout>
     </BrowserRouter>
   );

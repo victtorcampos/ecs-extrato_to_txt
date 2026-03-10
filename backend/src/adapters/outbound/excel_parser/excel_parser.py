@@ -183,5 +183,6 @@ class CalamineExcelParser(ExcelParserPort):
             finally:
                 os.unlink(tmp_path)
                 
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Erro ao validar arquivo Excel: {e}")
             return False

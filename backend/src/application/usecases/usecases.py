@@ -13,6 +13,9 @@ from src.domain.exceptions import (
 from src.application.ports.repositories import LoteRepositoryPort, MapeamentoContaRepositoryPort
 from src.application.ports.repositories.layout_repository_port import LayoutRepositoryPort
 from src.application.ports.services import ExcelParserPort, TxtGeneratorPort, EmailSenderPort
+from src.config.logging_config import get_logger
+
+logger = get_logger("usecases")
 
 
 class CriarProtocoloUseCase:
@@ -172,8 +175,8 @@ class ProcessarLoteUseCase:
                         <p>Acesse o sistema para baixar o arquivo gerado.</p>
                         """
                     )
-            except Exception:
-                pass  # Não falhar se email não enviar
+            except Exception as e:
+                logger.warning(f"Falha ao enviar email de notificação para {lote.email_notificacao}: {e}")
             
             return lote
             

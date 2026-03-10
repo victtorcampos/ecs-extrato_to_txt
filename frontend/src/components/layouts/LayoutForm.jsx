@@ -545,3 +545,5 @@ export const LayoutForm = () => {
     </div>
   );
 };
+
+export default LayoutForm;
