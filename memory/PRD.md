@@ -68,11 +68,11 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
 ### P0 - Em Progresso (Refatoração v2)
 - [x] Fase 1 — Estabilização e Fundação Arquitetural
 - [x] Fase 2 — Migração Estrutural + Correções de Performance
-- [ ] Fase 3 — FSD Completo + Robustez Backend
-  - Eliminar except Exception: pass (B-08)
-  - Externalizar constantes do TXT generator (B-09)
-  - Lazy loading + rota 404 (F-10)
-  - Migração completa para FSD (F-02 final)
+- [x] Fase 3 — FSD Completo + Robustez Backend
+  - except Exception: pass eliminado, substituído por logging (B-08)
+  - TxtGenerator externalizado em TxtConfig dataclass (B-09)
+  - Lazy loading com React.lazy + Suspense para 9 rotas (F-10)
+  - FSD barrel exports: 7 features + 3 shared (F-02 final)
 - [ ] Fase 4 — Feature v2: Auto-Detecção + Preview
   - DetectarLayoutUseCase (auto-detecção de estrutura, tipos, mapeamento)
   - PreviewParseUseCase (simulação sem gravar)
