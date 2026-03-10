@@ -37,3 +37,8 @@ async def init_db():
             await conn.execute(text("ALTER TABLE lotes ADD COLUMN layout_id VARCHAR(36)"))
         if "perfil_saida_id" not in columns:
             await conn.execute(text("ALTER TABLE lotes ADD COLUMN perfil_saida_id VARCHAR(36)"))
+        # Migração: adicionar regras_conta_json na tabela layouts_excel
+        result2 = await conn.execute(text("PRAGMA table_info(layouts_excel)"))
+        layout_cols = [row[1] for row in result2.fetchall()]
+        if "regras_conta_json" not in layout_cols:
+            await conn.execute(text("ALTER TABLE layouts_excel ADD COLUMN regras_conta_json JSON DEFAULT '[]'"))

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional, List
 from uuid import uuid4
 
-from src.domain.entities import LayoutExcel, ColunaLayout, ConfigPlanilha, ConfigValor, ConfigHistoricoPadrao
+from src.domain.entities import LayoutExcel, ColunaLayout, ConfigPlanilha, ConfigValor, ConfigHistoricoPadrao, RegraContaLayout
 from src.domain.value_objects import CNPJ, TipoDado, TipoSinal, CAMPOS_DESTINO
 from src.domain.exceptions import (
     LayoutNaoEncontradoError, 
@@ -28,7 +28,8 @@ class CriarLayoutUseCase:
         config_planilha: Optional[dict] = None,
         colunas: Optional[List[dict]] = None,
         config_valor: Optional[dict] = None,
-        config_historico_padrao: Optional[dict] = None
+        config_historico_padrao: Optional[dict] = None,
+        regras_conta: Optional[List[dict]] = None,
     ) -> LayoutExcel:
         """Cria um novo layout de importação"""
         
@@ -70,6 +71,10 @@ class CriarLayoutUseCase:
         if config_historico_padrao:
             layout.config_historico_padrao = ConfigHistoricoPadrao.from_dict(config_historico_padrao)
         
+        # Configurar regras de conta
+        if regras_conta:
+            layout.regras_conta = [RegraContaLayout.from_dict(r) for r in regras_conta]
+        
         return await self.repository.salvar(layout)
 
 
@@ -88,7 +93,8 @@ class AtualizarLayoutUseCase:
         config_planilha: Optional[dict] = None,
         colunas: Optional[List[dict]] = None,
         config_valor: Optional[dict] = None,
-        config_historico_padrao: Optional[dict] = None
+        config_historico_padrao: Optional[dict] = None,
+        regras_conta: Optional[List[dict]] = None,
     ) -> LayoutExcel:
         """Atualiza um layout existente"""
         
@@ -128,6 +134,9 @@ class AtualizarLayoutUseCase:
         
         if config_historico_padrao is not None:
             layout.config_historico_padrao = ConfigHistoricoPadrao.from_dict(config_historico_padrao)
+        
+        if regras_conta is not None:
+            layout.regras_conta = [RegraContaLayout.from_dict(r) for r in regras_conta]
         
         layout.atualizado_em = datetime.now()
         
@@ -241,7 +250,8 @@ class ClonarLayoutUseCase:
             config_planilha=ConfigPlanilha.from_dict(layout_original.config_planilha.to_dict()),
             colunas=[ColunaLayout.from_dict(c.to_dict()) for c in layout_original.colunas],
             config_valor=ConfigValor.from_dict(layout_original.config_valor.to_dict()),
-            config_historico_padrao=ConfigHistoricoPadrao.from_dict(layout_original.config_historico_padrao.to_dict())
+            config_historico_padrao=ConfigHistoricoPadrao.from_dict(layout_original.config_historico_padrao.to_dict()),
+            regras_conta=[RegraContaLayout.from_dict(r.to_dict()) for r in layout_original.regras_conta],
         )
         
         # Gerar novos IDs para colunas

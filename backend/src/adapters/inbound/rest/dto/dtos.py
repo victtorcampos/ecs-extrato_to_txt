@@ -187,6 +187,25 @@ class ConfigHistoricoPadraoDTO(BaseModel):
     campos_fallback: List[str] = Field(default_factory=lambda: ["documento", "conta_debito", "conta_credito"])
 
 
+class CondicaoContaLayoutDTO(BaseModel):
+    """DTO para condição de regra de conta"""
+    campo: str = ""
+    operador: str = "igual"
+    valor: str = ""
+    coluna_excel: str = ""
+
+
+class RegraContaLayoutDTO(BaseModel):
+    """DTO para regra de definição de contas dentro do layout"""
+    id: Optional[str] = None
+    nome: str = ""
+    ordem: int = 0
+    ativo: bool = True
+    condicoes: List[CondicaoContaLayoutDTO] = Field(default_factory=list)
+    conta_debito: str = ""
+    conta_credito: str = ""
+
+
 class CriarLayoutRequest(BaseModel):
     """DTO para criação de layout"""
     cnpj: str = Field(..., description="CNPJ da empresa")
@@ -196,6 +215,7 @@ class CriarLayoutRequest(BaseModel):
     colunas: Optional[List[ColunaLayoutDTO]] = None
     config_valor: Optional[ConfigValorDTO] = None
     config_historico_padrao: Optional[ConfigHistoricoPadraoDTO] = None
+    regras_conta: Optional[List[RegraContaLayoutDTO]] = None
 
 
 class AtualizarLayoutRequest(BaseModel):
@@ -207,6 +227,7 @@ class AtualizarLayoutRequest(BaseModel):
     colunas: Optional[List[ColunaLayoutDTO]] = None
     config_valor: Optional[ConfigValorDTO] = None
     config_historico_padrao: Optional[ConfigHistoricoPadraoDTO] = None
+    regras_conta: Optional[List[RegraContaLayoutDTO]] = None
 
 
 class ClonarLayoutRequest(BaseModel):
@@ -226,6 +247,7 @@ class LayoutResponse(BaseModel):
     colunas: List[dict]
     config_valor: dict
     config_historico_padrao: dict
+    regras_conta: List[dict] = Field(default_factory=list)
     total_colunas: int
     total_regras: int = 0
     criado_em: str

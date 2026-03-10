@@ -64,6 +64,7 @@ class LayoutExcelModel(Base):
     colunas_json = Column(JSON, default=list)
     config_valor_json = Column(JSON, default=dict)
     config_historico_padrao_json = Column(JSON, default=dict)
+    regras_conta_json = Column(JSON, default=list)
     
     criado_em = Column(DateTime, default=datetime.now)
     atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)

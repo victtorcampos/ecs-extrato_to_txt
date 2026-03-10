@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.application.ports.repositories import LayoutRepositoryPort, RegraRepositoryPort
 from src.domain.entities import (
     LayoutExcel, ColunaLayout, ConfigPlanilha, ConfigValor, ConfigHistoricoPadrao,
+    RegraContaLayout,
     RegraProcessamento, CondicaoRegra, AcaoRegra
 )
 from src.domain.value_objects import TipoRegra
@@ -31,6 +32,7 @@ class SQLAlchemyLayoutRepository(LayoutRepositoryPort):
             colunas=[ColunaLayout.from_dict(c) for c in (model.colunas_json or [])],
             config_valor=ConfigValor.from_dict(model.config_valor_json or {}),
             config_historico_padrao=ConfigHistoricoPadrao.from_dict(model.config_historico_padrao_json or {}),
+            regras_conta=[RegraContaLayout.from_dict(r) for r in (model.regras_conta_json or [])],
             criado_em=model.criado_em,
             atualizado_em=model.atualizado_em
         )
@@ -47,6 +49,7 @@ class SQLAlchemyLayoutRepository(LayoutRepositoryPort):
             colunas_json=[c.to_dict() for c in entity.colunas],
             config_valor_json=entity.config_valor.to_dict(),
             config_historico_padrao_json=entity.config_historico_padrao.to_dict(),
+            regras_conta_json=[r.to_dict() for r in entity.regras_conta],
             criado_em=entity.criado_em,
             atualizado_em=entity.atualizado_em
         )
@@ -113,6 +116,7 @@ class SQLAlchemyLayoutRepository(LayoutRepositoryPort):
             model.colunas_json = [c.to_dict() for c in layout.colunas]
             model.config_valor_json = layout.config_valor.to_dict()
             model.config_historico_padrao_json = layout.config_historico_padrao.to_dict()
+            model.regras_conta_json = [r.to_dict() for r in layout.regras_conta]
             model.atualizado_em = layout.atualizado_em
             await self.session.commit()
             await self.session.refresh(model)

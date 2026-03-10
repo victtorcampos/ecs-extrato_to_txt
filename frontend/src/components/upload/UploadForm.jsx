@@ -19,6 +19,7 @@ import {
 import { toast } from 'sonner';
 import { lotesApi, layoutsApi, perfisSaidaApi } from '../../services/api';
 import { TransformationConfig } from '../layouts/TransformationConfig';
+import { AccountRulesBuilder } from '../layouts/AccountRulesBuilder';
 
 const TIPO_DADO_OPTIONS = [
   { value: 'string', label: 'Texto' },
@@ -60,6 +61,7 @@ export const UploadForm = () => {
     linha_cabecalho: 0,
     linha_inicio_dados: 1,
     colunas: [],
+    regras_conta: [],
   });
 
   // General state
@@ -216,6 +218,7 @@ export const UploadForm = () => {
             obrigatorio: c.obrigatorio,
             transformacao: c.transformacao || {},
           })),
+          regras_conta: newLayout.regras_conta || [],
         };
         const createdLayout = await layoutsApi.criar(layoutPayload);
         layoutId = createdLayout.id;
@@ -636,6 +639,17 @@ export const UploadForm = () => {
                         />
                       )}
                     </div>
+                  </div>
+                )}
+
+                {/* Account Rules */}
+                {newLayout.colunas.length > 0 && (
+                  <div className="mt-4">
+                    <AccountRulesBuilder
+                      regras={newLayout.regras_conta}
+                      camposDisponiveis={camposDisponiveis}
+                      onChange={(regras) => setNewLayout((prev) => ({ ...prev, regras_conta: regras }))}
+                    />
                   </div>
                 )}
               </div>

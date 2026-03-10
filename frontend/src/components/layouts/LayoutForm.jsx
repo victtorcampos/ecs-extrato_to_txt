@@ -11,6 +11,7 @@ import {
 import { toast } from 'sonner';
 import { layoutsApi } from '../../services/api';
 import { TransformationConfig } from './TransformationConfig';
+import { AccountRulesBuilder } from './AccountRulesBuilder';
 
 const TIPO_DADO_OPTIONS = [
   { value: 'string', label: 'Texto' },
@@ -90,6 +91,7 @@ export const LayoutForm = () => {
     colunas: [emptyColuna()],
     config_valor: { tipo_sinal: 'sinal_valor', coluna_tipo: '', coluna_debito: '', coluna_credito: '', case_insensitive: true, mapeamento_tipo: { D: 'debito', C: 'credito', d: 'debito', c: 'credito', 'débito': 'debito', 'crédito': 'credito', debito: 'debito', credito: 'credito', 'DÉBITO': 'debito', 'CRÉDITO': 'credito', DEBITO: 'debito', CREDITO: 'credito' } },
     config_historico_padrao: { template: '{documento} - {conta_debito} -> {conta_credito}', campos_fallback: ['documento', 'conta_debito', 'conta_credito'] },
+    regras_conta: [],
   });
 
   useEffect(() => {
@@ -105,6 +107,7 @@ export const LayoutForm = () => {
           colunas: data.colunas.length > 0 ? data.colunas : [emptyColuna()],
           config_valor: data.config_valor,
           config_historico_padrao: data.config_historico_padrao,
+          regras_conta: data.regras_conta || [],
         });
       }).catch(() => {
         toast.error('Erro ao carregar layout');
@@ -509,6 +512,15 @@ export const LayoutForm = () => {
             </div>
           )}
         </div>
+      </section>
+
+      {/* Seção 5: Regras de Definição de Contas */}
+      <section className="bg-white border border-slate-200 rounded-lg p-5" data-testid="section-regras-conta">
+        <AccountRulesBuilder
+          regras={form.regras_conta}
+          camposDisponiveis={camposDisponiveis}
+          onChange={(regras) => setForm({ ...form, regras_conta: regras })}
+        />
       </section>
 
       {/* Botões */}

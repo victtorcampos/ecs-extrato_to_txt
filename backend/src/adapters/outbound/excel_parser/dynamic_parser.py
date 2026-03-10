@@ -9,7 +9,7 @@ from datetime import date, datetime
 from python_calamine import CalamineWorkbook
 
 from src.domain.entities import Lancamento
-from src.domain.entities.layout_entities import LayoutExcel, ColunaLayout, ConfigValor, ConfigPlanilha
+from src.domain.entities.layout_entities import LayoutExcel, ColunaLayout, ConfigValor, ConfigPlanilha, RegraContaLayout, CondicaoContaLayout
 from src.domain.exceptions import ArquivoExcelInvalidoError
 
 
@@ -327,6 +327,10 @@ class DynamicExcelParser:
         # Determinar D/C usando ConfigValor
         self._resolver_debito_credito(dados, row, layout.config_valor, dc_info)
 
+        # Avaliar regras de conta (primeira que bater vence)
+        if layout.regras_conta:
+            self._avaliar_regras_conta(dados, row, layout)
+
         # Montar Lancamento
         data_lanc = dados.get('data')
         # Se temos data_mes_ano + dia separado
@@ -359,6 +363,90 @@ class DynamicExcelParser:
             fato_contabil=_to_string(dados.get('fato_contabil', '')),
             empresa=_to_string(dados.get('codigo_empresa', '')),
         )
+
+    def _avaliar_regras_conta(self, dados: dict, row: list, layout: LayoutExcel):
+        """Avalia regras de definição de contas em ordem. Primeira que bater, vence."""
+        regras_ordenadas = sorted(
+            [r for r in layout.regras_conta if r.ativo],
+            key=lambda r: r.ordem
+        )
+
+        for regra in regras_ordenadas:
+            if self._regra_bate(regra, dados, row):
+                if regra.conta_debito:
+                    dados['conta_debito'] = regra.conta_debito
+                if regra.conta_credito:
+                    dados['conta_credito'] = regra.conta_credito
+                return  # Primeira que bater vence
+
+    def _regra_bate(self, regra: RegraContaLayout, dados: dict, row: list) -> bool:
+        """Verifica se TODAS as condições da regra são atendidas (AND)"""
+        if not regra.condicoes:
+            return False
+
+        for cond in regra.condicoes:
+            if not self._condicao_bate(cond, dados, row):
+                return False
+        return True
+
+    def _condicao_bate(self, cond: CondicaoContaLayout, dados: dict, row: list) -> bool:
+        """Avalia uma condição individual"""
+        # Determinar o valor a ser comparado
+        if cond.coluna_excel:
+            # Referência direta a coluna do Excel
+            valor_real = _to_string(_get_cell(row, cond.coluna_excel))
+        elif cond.campo == '_sinal_valor':
+            # Condição especial: sinal do valor
+            valor_num = dados.get('valor', 0)
+            if isinstance(valor_num, str):
+                try:
+                    valor_num = _parse_number_auto(valor_num)
+                except (ValueError, TypeError):
+                    valor_num = 0
+            if cond.operador == 'positivo':
+                return float(valor_num) >= 0
+            elif cond.operador == 'negativo':
+                return float(valor_num) < 0
+            return False
+        elif cond.campo == '_tipo_dc':
+            # Condição especial: tipo D/C já determinado
+            valor_real = _to_string(dados.get('_tipo_dc', ''))
+        else:
+            # Referência a campo_destino nos dados extraídos
+            valor_real = _to_string(dados.get(cond.campo, ''))
+
+        # Aplicar operador
+        operador = cond.operador.lower()
+        valor_cond = cond.valor
+
+        if operador == 'igual':
+            return valor_real.strip().lower() == valor_cond.strip().lower()
+        elif operador == 'diferente':
+            return valor_real.strip().lower() != valor_cond.strip().lower()
+        elif operador == 'contem':
+            return valor_cond.lower() in valor_real.lower()
+        elif operador == 'nao_contem':
+            return valor_cond.lower() not in valor_real.lower()
+        elif operador == 'comeca_com':
+            return valor_real.lower().startswith(valor_cond.lower())
+        elif operador == 'termina_com':
+            return valor_real.lower().endswith(valor_cond.lower())
+        elif operador == 'dc_debito':
+            return valor_real.lower() in ('debito', 'débito', 'd')
+        elif operador == 'dc_credito':
+            return valor_real.lower() in ('credito', 'crédito', 'c')
+        elif operador == 'positivo':
+            try:
+                return float(_parse_number_auto(valor_real)) >= 0
+            except (ValueError, TypeError):
+                return False
+        elif operador == 'negativo':
+            try:
+                return float(_parse_number_auto(valor_real)) < 0
+            except (ValueError, TypeError):
+                return False
+
+        return False
 
     def _resolver_debito_credito(self, dados: dict, row: list, config: ConfigValor, dc_info: Optional[str]):
         """Resolve qual é débito e qual é crédito baseado na configuração"""

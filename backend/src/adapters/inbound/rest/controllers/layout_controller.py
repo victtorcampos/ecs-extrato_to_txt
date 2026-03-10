@@ -53,6 +53,7 @@ def _layout_to_response(layout: LayoutExcel, total_regras: int = 0) -> LayoutRes
         colunas=[c.to_dict() for c in layout.colunas],
         config_valor=layout.config_valor.to_dict(),
         config_historico_padrao=layout.config_historico_padrao.to_dict(),
+        regras_conta=[r.to_dict() for r in layout.regras_conta],
         total_colunas=layout.total_colunas,
         total_regras=total_regras,
         criado_em=layout.criado_em.isoformat() if layout.criado_em else "",
@@ -199,6 +200,7 @@ async def criar_layout(request: CriarLayoutRequest, session: AsyncSession = Depe
             colunas=[c.model_dump() for c in request.colunas] if request.colunas else None,
             config_valor=request.config_valor.model_dump() if request.config_valor else None,
             config_historico_padrao=request.config_historico_padrao.model_dump() if request.config_historico_padrao else None,
+            regras_conta=[r.model_dump() for r in request.regras_conta] if request.regras_conta else None,
         )
 
         return _layout_to_response(layout)
@@ -226,6 +228,7 @@ async def atualizar_layout(
             colunas=[c.model_dump() for c in request.colunas] if request.colunas else None,
             config_valor=request.config_valor.model_dump() if request.config_valor else None,
             config_historico_padrao=request.config_historico_padrao.model_dump() if request.config_historico_padrao else None,
+            regras_conta=[r.model_dump() for r in request.regras_conta] if request.regras_conta else None,
         )
 
         n_regras = await regra_repo.contar_por_layout(layout.id)

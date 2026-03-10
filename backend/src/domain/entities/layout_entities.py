@@ -8,6 +8,67 @@ from ..value_objects.layout_value_objects import TipoDado, TipoSinal
 
 
 @dataclass
+class CondicaoContaLayout:
+    """Condição para uma regra de definição de contas"""
+    campo: str = ""                   # "_sinal_valor", "_tipo_dc", campo_destino ou referência livre
+    operador: str = "igual"           # positivo, negativo, igual, diferente, contem, nao_contem, dc_debito, dc_credito
+    valor: str = ""                   # Valor para comparação
+    coluna_excel: str = ""            # Referência direta a coluna do Excel (alternativa ao campo)
+
+    def to_dict(self) -> dict:
+        return {
+            "campo": self.campo,
+            "operador": self.operador,
+            "valor": self.valor,
+            "coluna_excel": self.coluna_excel,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> 'CondicaoContaLayout':
+        return CondicaoContaLayout(
+            campo=data.get("campo", ""),
+            operador=data.get("operador", "igual"),
+            valor=data.get("valor", ""),
+            coluna_excel=data.get("coluna_excel", ""),
+        )
+
+
+@dataclass
+class RegraContaLayout:
+    """Regra de definição de contas débito/crédito dentro de um layout"""
+    id: str = field(default_factory=lambda: str(uuid4()))
+    nome: str = ""
+    ordem: int = 0
+    ativo: bool = True
+    condicoes: List[CondicaoContaLayout] = field(default_factory=list)  # AND — todas devem bater
+    conta_debito: str = ""
+    conta_credito: str = ""
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "nome": self.nome,
+            "ordem": self.ordem,
+            "ativo": self.ativo,
+            "condicoes": [c.to_dict() for c in self.condicoes],
+            "conta_debito": self.conta_debito,
+            "conta_credito": self.conta_credito,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> 'RegraContaLayout':
+        return RegraContaLayout(
+            id=data.get("id", str(uuid4())),
+            nome=data.get("nome", ""),
+            ordem=data.get("ordem", 0),
+            ativo=data.get("ativo", True),
+            condicoes=[CondicaoContaLayout.from_dict(c) for c in data.get("condicoes", [])],
+            conta_debito=data.get("conta_debito", ""),
+            conta_credito=data.get("conta_credito", ""),
+        )
+
+
+@dataclass
 class ColunaLayout:
     """Configuração de uma coluna do Excel"""
     id: str = field(default_factory=lambda: str(uuid4()))
@@ -153,6 +214,7 @@ class LayoutExcel:
     colunas: List[ColunaLayout] = field(default_factory=list)
     config_valor: ConfigValor = field(default_factory=ConfigValor)
     config_historico_padrao: ConfigHistoricoPadrao = field(default_factory=ConfigHistoricoPadrao)
+    regras_conta: List[RegraContaLayout] = field(default_factory=list)
     
     criado_em: datetime = field(default_factory=datetime.now)
     atualizado_em: datetime = field(default_factory=datetime.now)
@@ -190,6 +252,7 @@ class LayoutExcel:
             "colunas": [c.to_dict() for c in self.colunas],
             "config_valor": self.config_valor.to_dict(),
             "config_historico_padrao": self.config_historico_padrao.to_dict(),
+            "regras_conta": [r.to_dict() for r in self.regras_conta],
             "criado_em": self.criado_em.isoformat() if self.criado_em else None,
             "atualizado_em": self.atualizado_em.isoformat() if self.atualizado_em else None
         }
@@ -206,6 +269,7 @@ class LayoutExcel:
             colunas=[ColunaLayout.from_dict(c) for c in data.get("colunas", [])],
             config_valor=ConfigValor.from_dict(data.get("config_valor", {})),
             config_historico_padrao=ConfigHistoricoPadrao.from_dict(data.get("config_historico_padrao", {})),
+            regras_conta=[RegraContaLayout.from_dict(r) for r in data.get("regras_conta", [])],
             criado_em=datetime.fromisoformat(data["criado_em"]) if data.get("criado_em") else datetime.now(),
             atualizado_em=datetime.fromisoformat(data["atualizado_em"]) if data.get("atualizado_em") else datetime.now()
         )
