@@ -57,16 +57,17 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
   - Rota /home redireciona para / (F-09)
   - Página 404 funcional (F-11)
   - Estrutura FSD criada no frontend (F-02 início)
+- [x] **FASE 2 — Migração Estrutural + Performance** (2026-03-10)
+  - N+1 Query resolvida: contar_por_layouts batch no RegraRepository (B-01)
+  - api.js segmentado em módulos por domínio (F-06)
+  - Custom hooks: useAsync, useDownload, useNotification (F-03/F-04/F-05/F-07)
+  - Hooks integrados em LotesList e LoteDetail
 
 ## Backlog (P0/P1/P2)
 
 ### P0 - Em Progresso (Refatoração v2)
 - [x] Fase 1 — Estabilização e Fundação Arquitetural
-- [ ] Fase 2 — Migração Estrutural + Correções de Performance
-  - Refatorar _processar_lote_background para DI factory (B-02)
-  - Resolver N+1 Query na listagem de layouts (B-01)
-  - Segmentar api.js em módulos (F-06)
-  - Custom hooks: useAsync, useDownload, useNotification (F-03/F-04/F-05/F-07)
+- [x] Fase 2 — Migração Estrutural + Correções de Performance
 - [ ] Fase 3 — FSD Completo + Robustez Backend
   - Eliminar except Exception: pass (B-08)
   - Externalizar constantes do TXT generator (B-09)
