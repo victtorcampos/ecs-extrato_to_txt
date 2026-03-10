@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { WizardStepper } from './WizardStepper';
@@ -8,6 +8,7 @@ import { StepAccounts } from './StepAccounts';
 import { StepPreview } from './StepPreview';
 import apiClient from '../../services/api/client';
 import { lotesApi } from '../../services/api/lotes.api';
+import { perfisSaidaApi } from '../../services/api/perfis-saida.api';
 
 export const ImportWizard = () => {
   const navigate = useNavigate();
@@ -20,9 +21,11 @@ export const ImportWizard = () => {
     periodo_mes: new Date().getMonth() + 1,
     periodo_ano: new Date().getFullYear(),
     email_notificacao: '',
+    perfil_saida_id: '',
   });
   const [file, setFile] = useState(null);
   const [fileBase64, setFileBase64] = useState(null);
+  const [perfisSaida, setPerfisSaida] = useState([]);
 
   // Step 2: Detection result
   const [detection, setDetection] = useState(null);
@@ -32,6 +35,15 @@ export const ImportWizard = () => {
 
   // Step 4: Preview
   const [preview, setPreview] = useState(null);
+
+  // Load perfis de saída
+  useEffect(() => {
+    perfisSaidaApi.listar({ apenas_ativos: true }).then(res => {
+      setPerfisSaida(res.items || []);
+      const padrao = (res.items || []).find(p => p.padrao);
+      if (padrao) setFormData(prev => ({ ...prev, perfil_saida_id: padrao.id }));
+    }).catch(() => {});
+  }, []);
 
   // ─── Step Handlers ──────────────────────────
 
@@ -63,7 +75,6 @@ export const ImportWizard = () => {
     setStep(4);
     setLoading(true);
     try {
-      // Build inline layout config from detection
       const layoutConfig = {
         cnpj: formData.cnpj.replace(/\D/g, ''),
         config_planilha: detection.config_planilha,
@@ -99,7 +110,6 @@ export const ImportWizard = () => {
     if (!fileBase64) return;
     setLoading(true);
     try {
-      // Create layout config
       const layoutConfig = {
         cnpj: formData.cnpj.replace(/\D/g, ''),
         nome: `Auto-${file?.name || 'import'}-${Date.now()}`,
@@ -116,13 +126,13 @@ export const ImportWizard = () => {
         config_valor: detection.config_valor,
       };
 
-      // Save layout first
+      // Save layout
       const layoutRes = await apiClient.post('/api/v1/import-layouts', {
         ...layoutConfig,
         regras_conta: regrasContas.length > 0 ? regrasContas : [],
       });
 
-      // Create lote
+      // Create lote with perfil_saida_id
       const loteRes = await lotesApi.criar({
         cnpj: formData.cnpj.replace(/\D/g, ''),
         periodo_mes: formData.periodo_mes,
@@ -132,6 +142,7 @@ export const ImportWizard = () => {
         nome_arquivo: file?.name || 'import.xls',
         layout_id: layoutRes.data.id,
         nome_layout: layoutRes.data.nome,
+        perfil_saida_id: formData.perfil_saida_id || null,
       });
 
       toast.success(`Lote ${loteRes.protocolo} criado! Processamento iniciado.`);
@@ -160,6 +171,7 @@ export const ImportWizard = () => {
             file={file}
             setFile={setFile}
             setFileBase64={setFileBase64}
+            perfisSaida={perfisSaida}
             onNext={handleDetect}
           />
         )}

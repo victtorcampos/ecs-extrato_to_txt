@@ -64,6 +64,7 @@ async def create_processar_lote_dependencies():
         SQLAlchemyLoteRepository,
         SQLAlchemyMapeamentoRepository,
         SQLAlchemyLayoutRepository,
+        SQLAlchemyPerfilSaidaRepository,
     )
     from src.adapters.outbound.excel_parser import CalamineExcelParser, DynamicExcelParser
     from src.adapters.outbound.txt_generator import TxtGenerator
@@ -75,6 +76,7 @@ async def create_processar_lote_dependencies():
         lote_repo = SQLAlchemyLoteRepository(session)
         mapeamento_repo = SQLAlchemyMapeamentoRepository(session)
         layout_repo = SQLAlchemyLayoutRepository(session)
+        perfil_saida_repo = SQLAlchemyPerfilSaidaRepository(session)
 
         use_case = ProcessarLoteUseCase(
             lote_repo,
@@ -84,6 +86,7 @@ async def create_processar_lote_dependencies():
             ResendEmailSender(),
             layout_repository=layout_repo,
             dynamic_parser=DynamicExcelParser(),
+            perfil_saida_repository=perfil_saida_repo,
         )
         return session, use_case
     except Exception:
