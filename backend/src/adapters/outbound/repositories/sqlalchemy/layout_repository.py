@@ -254,6 +254,17 @@ class SQLAlchemyRegraRepository(RegraRepositoryPort):
             .where(RegraProcessamentoModel.layout_id == layout_id)
         )
         return result.scalar() or 0
+
+    async def contar_por_layouts(self, layout_ids: list[str]) -> dict[str, int]:
+        """Conta regras para múltiplos layouts em uma única query (resolve N+1)"""
+        if not layout_ids:
+            return {}
+        result = await self.session.execute(
+            select(RegraProcessamentoModel.layout_id, func.count(RegraProcessamentoModel.id))
+            .where(RegraProcessamentoModel.layout_id.in_(layout_ids))
+            .group_by(RegraProcessamentoModel.layout_id)
+        )
+        return {row[0]: row[1] for row in result.all()}
     
     async def obter_proxima_ordem(self, layout_id: str) -> int:
         result = await self.session.execute(

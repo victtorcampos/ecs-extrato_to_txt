@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Search, 
-  Filter, 
   FileText, 
   Download, 
   Trash2,
@@ -10,12 +9,15 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, Button, Input, Select, StatusBadge, Spinner, EmptyState } from '../ui';
+import { Card, CardContent, Button, Input, Select, StatusBadge, Spinner, EmptyState } from '../ui';
 import { lotesApi } from '../../services/api';
 import { formatDate, formatCurrency } from '../../lib/utils';
+import { useDownload, useNotification } from '../../hooks';
 
 export const LotesList = () => {
   const navigate = useNavigate();
+  const { download, downloading } = useDownload();
+  const { notifyError } = useNotification();
   const [lotes, setLotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -76,15 +78,9 @@ export const LotesList = () => {
 
   const handleDownload = async (lote) => {
     try {
-      const blob = await lotesApi.downloadArquivo(lote.id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${lote.protocolo}.txt`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await download(() => lotesApi.downloadArquivo(lote.id), `${lote.protocolo}.txt`);
     } catch (err) {
-      setError('Erro ao baixar arquivo');
+      notifyError(err, 'Erro ao baixar arquivo');
     }
   };
 

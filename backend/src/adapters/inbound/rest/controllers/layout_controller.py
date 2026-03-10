@@ -69,10 +69,10 @@ async def listar_layouts(
         total = await use_case.contar(cnpj=cnpj)
         cnpjs = await use_case.listar_cnpjs()
 
-        items = []
-        for layout in layouts:
-            n_regras = await regra_repo.contar_por_layout(layout.id)
-            items.append(_layout_to_response(layout, n_regras))
+        # Batch: resolve N+1 query contando regras para todos os layouts de uma vez
+        layout_ids = [l.id for l in layouts]
+        regras_count = await regra_repo.contar_por_layouts(layout_ids)
+        items = [_layout_to_response(l, regras_count.get(l.id, 0)) for l in layouts]
 
         return LayoutListResponse(items=items, total=total, cnpjs_disponiveis=cnpjs)
     except DomainError as e:
