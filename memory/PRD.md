@@ -73,7 +73,14 @@ Sistema de processamento de lotes contábeis que recebe arquivos Excel, valida d
   - TxtGenerator externalizado em TxtConfig dataclass (B-09)
   - Lazy loading com React.lazy + Suspense para 9 rotas (F-10)
   - FSD barrel exports: 7 features + 3 shared (F-02 final)
-- [ ] Fase 4 — Feature v2: Auto-Detecção + Preview
+- [x] Fase 4 — Feature v2: Auto-Detecção + Preview (2026-03-10)
+  - **DetectarLayoutUseCase**: auto-detecção de estrutura, tipos de coluna, mapeamento e ConfigValor
+  - **PreviewParseUseCase**: simulação de parsing sem gravar
+  - **Endpoints**: POST /detect e POST /test-parse
+  - **Frontend Import Wizard**: 4 steps (Upload → Revisão → Contas/Regras → Preview)
+  - Templates contextuais de regras baseados nos dados reais
+  - Bug fix: tipo_dado mapping normalizado entre detect e layout entities
+- [ ] Fase 5 — Refinamento, OFX prep, Validação Final
   - DetectarLayoutUseCase (auto-detecção de estrutura, tipos, mapeamento)
   - PreviewParseUseCase (simulação sem gravar)
   - Endpoints /detect e /test-parse
