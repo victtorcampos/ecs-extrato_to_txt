@@ -96,16 +96,24 @@ def _lote_to_detalhado_response(lote: Lote) -> LoteDetalhadoResponse:
 
 
 async def _processar_lote_background(lote_id: str):
-    """Processa lote em background usando factory de DI"""
+    """Processa lote em background usando factory de DI com transacao atomica (B-11)"""
     from src.config.dependencies import create_processar_lote_dependencies
 
-    session, use_case = await create_processar_lote_dependencies()
+    session = None
     try:
+        session, use_case = await create_processar_lote_dependencies()
         await use_case.executar(lote_id)
+    except DomainError as e:
+        logger.warning(f"Erro de dominio no lote {lote_id}: {e}")
+        if session:
+            await session.rollback()
     except Exception as e:
         logger.error(f"Erro no processamento background do lote {lote_id}: {e}", exc_info=True)
+        if session:
+            await session.rollback()
     finally:
-        await session.close()
+        if session:
+            await session.close()
 
 
 @router.post("", response_model=LoteResponse, status_code=201)

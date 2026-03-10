@@ -15,6 +15,12 @@ from src.config.logging_config import get_logger
 
 logger = get_logger("dynamic_parser")
 
+# Constantes para deteccao de formato numerico (B-12)
+MAX_DECIMAL_PLACES = 2  # Maximo de casas decimais para separador decimal
+CAMPOS_NUMERICOS = ('valor', 'saldo', 'saldo_inicial')
+CAMPOS_DATA = ('data', 'data_mes_ano')
+FORMATOS_DATA_COMUNS = ('%d/%m/%Y', '%d-%m-%Y', '%Y-%m-%d', '%m/%Y', '%d/%m/%y')
+
 
 def _col_letter_to_index(col: str) -> int:
     """Converte letra de coluna (A, B, ..., AA) para índice 0-based"""
@@ -84,13 +90,13 @@ def _parse_number_auto(value) -> float:
     elif ',' in cleaned:
         # Apenas vírgula: verificar se é separador decimal BR
         parts = cleaned.split(',')
-        if len(parts) == 2 and len(parts[1]) <= 2:
+        if len(parts) == 2 and len(parts[1]) <= MAX_DECIMAL_PLACES:
             return _parse_number_br(text)
         # Pode ser separador de milhar US
         return _parse_number_us(text)
     elif '.' in cleaned:
         parts = cleaned.split('.')
-        if len(parts) == 2 and len(parts[1]) <= 2:
+        if len(parts) == 2 and len(parts[1]) <= MAX_DECIMAL_PLACES:
             return float(cleaned)
         # Separador de milhar BR sem decimais
         return float(cleaned.replace('.', ''))
@@ -222,7 +228,7 @@ def _parse_date_value(value, formato: Optional[str] = None) -> Optional[date]:
             pass
 
     # Formatos comuns
-    for fmt in ('%d/%m/%Y', '%d-%m-%Y', '%Y-%m-%d', '%m/%Y', '%d/%m/%y'):
+    for fmt in FORMATOS_DATA_COMUNS:
         try:
             return datetime.strptime(text, fmt).date()
         except ValueError:
@@ -309,10 +315,10 @@ class DynamicExcelParser:
                 value = text_val
 
             # Converter conforme tipo de dado
-            if coluna.tipo_dado.value in ('decimal', 'integer') or coluna.campo_destino in ('valor', 'saldo', 'saldo_inicial'):
+            if coluna.tipo_dado.value in ('decimal', 'integer') or coluna.campo_destino in CAMPOS_NUMERICOS:
                 formato_numero = trans.get('formato_numero', 'automatico')
                 value = _apply_number_format(value, formato_numero)
-            elif coluna.tipo_dado.value in ('date', 'datetime') or coluna.campo_destino in ('data', 'data_mes_ano'):
+            elif coluna.tipo_dado.value in ('date', 'datetime') or coluna.campo_destino in CAMPOS_DATA:
                 value = _parse_date_value(value, coluna.formato)
             else:
                 value = _to_string(value)
