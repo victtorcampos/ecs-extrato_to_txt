@@ -13,7 +13,7 @@ from typing import Dict, Any
 
 class AccountingBackendTester:
     def __init__(self):
-        self.base_url = "https://excel-transform-18.preview.emergentagent.com"
+        self.base_url = "https://batch-accounting-pro.preview.emergentagent.com"
         self.tests_run = 0
         self.tests_passed = 0
         self.test_results = []
