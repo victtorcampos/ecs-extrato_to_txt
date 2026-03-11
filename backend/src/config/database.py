@@ -29,6 +29,7 @@ async def get_session() -> AsyncSession:
 
 async def init_db():
     from src.config.logging_config import get_logger
+    import src.config.models  # noqa: F401 — registra models no Base.metadata
     logger = get_logger("database")
 
     async with engine.begin() as conn:

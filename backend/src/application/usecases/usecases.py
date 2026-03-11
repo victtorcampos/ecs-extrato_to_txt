@@ -129,12 +129,30 @@ class ProcessarLoteUseCase:
             mapeamentos_existentes = await self.mapeamento_repository.listar_por_cnpj(lote.cnpj)
             mapeamentos_dict = {m.conta_cliente: m.conta_padrao for m in mapeamentos_existentes}
             
-            # Identificar contas sem mapeamento
+            # Coletar contas que são destinos de regras_conta (não precisam de mapeamento)
+            contas_de_regras: set = set()
+            if lote.layout_id and self.layout_repository:
+                layout_para_regras = await self.layout_repository.buscar_por_id(lote.layout_id)
+                if layout_para_regras:
+                    for regra in layout_para_regras.regras_conta:
+                        if regra.conta_debito:
+                            contas_de_regras.add(regra.conta_debito)
+                        if regra.conta_credito:
+                            contas_de_regras.add(regra.conta_credito)
+                        for acao in regra.acoes:
+                            if acao.campo_destino in ("conta_debito", "conta_credito") and acao.valor:
+                                contas_de_regras.add(acao.valor)
+
+            # Identificar contas sem mapeamento (excluindo destinos de regras)
             contas_sem_mapeamento = set()
             for lanc in lancamentos:
-                if lanc.conta_debito and lanc.conta_debito not in mapeamentos_dict:
+                if lanc.conta_debito \
+                        and lanc.conta_debito not in mapeamentos_dict \
+                        and lanc.conta_debito not in contas_de_regras:
                     contas_sem_mapeamento.add((lanc.conta_debito, "debito"))
-                if lanc.conta_credito and lanc.conta_credito not in mapeamentos_dict:
+                if lanc.conta_credito \
+                        and lanc.conta_credito not in mapeamentos_dict \
+                        and lanc.conta_credito not in contas_de_regras:
                     contas_sem_mapeamento.add((lanc.conta_credito, "credito"))
             
             if contas_sem_mapeamento:

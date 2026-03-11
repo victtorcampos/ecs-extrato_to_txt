@@ -220,3 +220,4 @@ data/files/
 /frontend/node_modules
 frontend/package-lock.json
 *.db
+backend/contabil.db

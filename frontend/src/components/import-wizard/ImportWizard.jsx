@@ -10,6 +10,7 @@ import { StepPreview } from './StepPreview';
 import { StepDownload } from './StepDownload';
 import apiClient from '../../services/api/client';
 import { lotesApi } from '../../services/api/lotes.api';
+import { layoutsApi } from '../../services/api/layouts.api';
 
 export const ImportWizard = () => {
   const navigate = useNavigate();
@@ -28,6 +29,8 @@ export const ImportWizard = () => {
 
   // Step 2: Detection result
   const [detection, setDetection] = useState(null);
+  const [layoutsDisponiveis, setLayoutsDisponiveis] = useState([]);
+  const [layoutAplicadoId, setLayoutAplicadoId] = useState(null);
 
   // Step 3: Account rules
   const [regrasContas, setRegrasContas] = useState([]);
@@ -53,16 +56,31 @@ export const ImportWizard = () => {
     if (!fileBase64) return;
     setLoading(true);
     try {
-      const response = await apiClient.post('/api/v1/import-layouts/detect', {
-        arquivo_base64: fileBase64,
-      });
-      setDetection(response.data);
+      const [detectRes, layoutsRes] = await Promise.all([
+        apiClient.post('/api/v1/import-layouts/detect', { arquivo_base64: fileBase64 }),
+        layoutsApi.listar({ cnpj: formData.cnpj.replace(/\D/g, '') }),
+      ]);
+      setDetection(detectRes.data);
+      setLayoutsDisponiveis(layoutsRes.items || []);
+      setLayoutAplicadoId(null);
       setStep(2);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro na auto-detecção');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleApplyLayout = (layout) => {
+    const mapaLayout = {};
+    layout.colunas.forEach(c => { mapaLayout[String(c.coluna_excel)] = c.campo_destino; });
+    const novasColunas = detection.colunas.map(col => ({
+      ...col,
+      campo_destino: mapaLayout[String(col.coluna_excel)] ?? col.campo_destino,
+    }));
+    setDetection({ ...detection, colunas: novasColunas });
+    setRegrasContas(layout.regras_conta || []);
+    setLayoutAplicadoId(layout.id);
   };
 
   const handleUpdateColumn = (idx, field, value) => {
@@ -163,16 +181,24 @@ export const ImportWizard = () => {
     if (!fileBase64) return;
     setLoading(true);
     try {
-      const layoutConfig = {
-        ...buildLayoutConfig(),
-        nome: `Auto-${file?.name || 'import'}-${Date.now()}`,
-      };
+      const layoutConfig = buildLayoutConfig();
+      const regrasParaSalvar = regrasContas.length > 0 ? regrasContas : [];
 
-      // Save layout
-      const layoutRes = await apiClient.post('/api/v1/import-layouts', {
-        ...layoutConfig,
-        regras_conta: regrasContas.length > 0 ? regrasContas : [],
-      });
+      // Atualizar layout existente ou criar novo
+      let layoutFinal;
+      if (layoutAplicadoId) {
+        layoutFinal = await layoutsApi.atualizar(layoutAplicadoId, {
+          ...layoutConfig,
+          regras_conta: regrasParaSalvar,
+        });
+      } else {
+        const res = await apiClient.post('/api/v1/import-layouts', {
+          ...layoutConfig,
+          nome: `Auto-${file?.name || 'import'}-${Date.now()}`,
+          regras_conta: regrasParaSalvar,
+        });
+        layoutFinal = res.data;
+      }
 
       // Create lote
       const loteRes = await lotesApi.criar({
@@ -182,8 +208,8 @@ export const ImportWizard = () => {
         email_notificacao: formData.email_notificacao || null,
         arquivo_base64: fileBase64,
         nome_arquivo: file?.name || 'import.xls',
-        layout_id: layoutRes.data.id,
-        nome_layout: layoutRes.data.nome,
+        layout_id: layoutFinal.id,
+        nome_layout: layoutFinal.nome,
         perfil_saida_id: layoutSaidaId || null,
       });
 
@@ -220,6 +246,9 @@ export const ImportWizard = () => {
           <StepReview
             detection={detection}
             onUpdateColumn={handleUpdateColumn}
+            layoutsDisponiveis={layoutsDisponiveis}
+            onApplyLayout={handleApplyLayout}
+            layoutAplicadoId={layoutAplicadoId}
             onBack={() => setStep(1)}
             onNext={() => setStep(3)}
           />

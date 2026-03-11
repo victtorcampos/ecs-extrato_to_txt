@@ -4,9 +4,10 @@ Implementa fielmente o contrato: Leiaute Domínio Sistemas com Separador - Lanç
 
 Registros:
 - 0000: Identificação da empresa (CNPJ)
-- 6000: Cabeçalho do lançamento (tipo D/C/X/V)
-- 6100: Detalhe do lançamento (data, contas, valor, histórico)
+- 6000: Cabeçalho do lote (tipo D/C/X/V) — emitido UMA vez por lote
+- 6100: Detalhe do lançamento (data, contas, valor, histórico) — um por lançamento
 """
+from datetime import date as date_type, datetime as datetime_type
 from typing import List, Dict, Any, Optional
 from src.application.ports.services.service_ports import OutputGeneratorPort
 from src.domain.entities import Lancamento
@@ -43,7 +44,19 @@ class DominioSistemasTxtGenerator(OutputGeneratorPort):
         ])
         linhas.append(reg_0000)
 
-        # Agrupar lançamentos por lote/sequência
+        # Registro 6000 - Cabeçalho do lote (único por arquivo)
+        # Formato: |6000|{tipo}|{cod_padrao}|{localizador}|{rtt}|
+        reg_6000 = self._montar_registro(sep, incluir_delim, [
+            "6000",
+            tipo_lanc,   # Tipo: X (1 débito 1 crédito), D, C, V (vários débitos e créditos)
+            "",          # Código Padrão
+            "",          # Localizador
+            "",          # RTT (S/N)
+        ])
+        linhas.append(reg_6000)
+
+        # Registros 6100 - Um por lançamento
+        # Formato: |6100|{data}|{conta_deb}|{conta_cred}|{valor}|{cod_hist}|{historico}|{usuario}|{cod_filial}|{scp}|
         for lanc in lancamentos:
             conta_deb = mapeamentos.get(lanc.conta_debito, lanc.conta_debito)
             conta_cred = mapeamentos.get(lanc.conta_credito, lanc.conta_credito)
@@ -52,19 +65,6 @@ class DominioSistemasTxtGenerator(OutputGeneratorPort):
             data_formatada = self._formatar_data(lanc.data)
             historico = lanc.historico or ""
 
-            # Registro 6000 - Cabeçalho do lançamento
-            # Formato: |6000|{tipo}|{cod_padrao}|{localizador}|{rtt}|
-            reg_6000 = self._montar_registro(sep, incluir_delim, [
-                "6000",
-                tipo_lanc,   # Tipo: X (1 débito 1 crédito), D, C, V (vários débitos e créditos)
-                "",          # Código Padrão
-                "",          # Localizador
-                "",          # RTT (S/N)
-            ])
-            linhas.append(reg_6000)
-
-            # Registro 6100 - Detalhe do lançamento
-            # Formato: |6100|{data}|{conta_deb}|{conta_cred}|{valor}|{cod_hist}|{historico}|{usuario}|{cod_filial}|{scp}|
             reg_6100 = self._montar_registro(sep, incluir_delim, [
                 "6100",
                 data_formatada,     # Data DD/MM/AAAA
@@ -115,14 +115,15 @@ class DominioSistemasTxtGenerator(OutputGeneratorPort):
             return "0,00"
         return f"{abs(valor):,.2f}".replace(",", "_").replace(".", ",").replace("_", "")
 
-    def _formatar_data(self, data_str: str) -> str:
-        """Formata data para DD/MM/AAAA"""
-        if not data_str:
+    def _formatar_data(self, data) -> str:
+        """Formata data para DD/MM/AAAA — aceita date, datetime ou string"""
+        if not data:
             return ""
-        # Se já está em DD/MM/AAAA
+        if isinstance(data, (date_type, datetime_type)):
+            return data.strftime("%d/%m/%Y")
+        data_str = str(data).strip()
         if "/" in data_str and len(data_str) >= 10:
             return data_str[:10]
-        # Se está em YYYY-MM-DD
         if "-" in data_str and len(data_str) >= 10:
             partes = data_str[:10].split("-")
             if len(partes) == 3:
