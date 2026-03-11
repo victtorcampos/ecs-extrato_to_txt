@@ -250,3 +250,5 @@ __marimo__/
 # Environment files
 *.env
 *.env.*
+/frontend/node_modules
+frontend/package-lock.json
