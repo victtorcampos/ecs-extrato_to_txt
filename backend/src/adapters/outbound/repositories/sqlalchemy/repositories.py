@@ -14,7 +14,7 @@ class LoteMapper:
     
     @staticmethod
     def to_model(lote: Lote) -> LoteModel:
-        return LoteModel(
+        model = LoteModel(
             id=lote.id,
             protocolo=lote.protocolo,
             cnpj=lote.cnpj,
@@ -36,13 +36,17 @@ class LoteMapper:
             atualizado_em=lote.atualizado_em,
             processado_em=lote.processado_em
         )
+        # Adicionar novos campos de caminho
+        model.caminho_arquivo_original = lote.caminho_arquivo_original
+        model.caminho_arquivo_saida = lote.caminho_arquivo_saida
+        return model
     
     @staticmethod
     def to_entity(model: LoteModel) -> Lote:
         lancamentos = [LoteMapper._dict_to_lancamento(d) for d in (model.lancamentos_json or [])]
         pendencias = [LoteMapper._dict_to_pendencia(d) for d in (model.pendencias_json or [])]
-        
-        return Lote(
+
+        lote = Lote(
             id=model.id,
             protocolo=model.protocolo,
             cnpj=model.cnpj,
@@ -64,6 +68,10 @@ class LoteMapper:
             atualizado_em=model.atualizado_em,
             processado_em=model.processado_em
         )
+        # Adicionar novos campos de caminho (com fallback para legado)
+        lote.caminho_arquivo_original = getattr(model, 'caminho_arquivo_original', None)
+        lote.caminho_arquivo_saida = getattr(model, 'caminho_arquivo_saida', None)
+        return lote
     
     @staticmethod
     def _lancamento_to_dict(l: Lancamento) -> dict:
@@ -82,7 +90,9 @@ class LoteMapper:
             "unidade_negocio": l.unidade_negocio,
             "fantasia": l.fantasia,
             "fato_contabil": l.fato_contabil,
-            "empresa": l.empresa
+            "empresa": l.empresa,
+            "tipo_lancamento": l.tipo_lancamento if isinstance(l.tipo_lancamento, str) else (l.tipo_lancamento.value if l.tipo_lancamento else "X"),
+            "grupo_id": l.grupo_id
         }
     
     @staticmethod
@@ -107,7 +117,9 @@ class LoteMapper:
             unidade_negocio=d.get("unidade_negocio", ""),
             fantasia=d.get("fantasia", ""),
             fato_contabil=d.get("fato_contabil", ""),
-            empresa=d.get("empresa", "")
+            empresa=d.get("empresa", ""),
+            tipo_lancamento=d.get("tipo_lancamento", "X"),
+            grupo_id=d.get("grupo_id")
         )
     
     @staticmethod
@@ -202,7 +214,9 @@ class SQLAlchemyLoteRepository(LoteRepositoryPort):
             model.pendencias_json = [LoteMapper._pendencia_to_dict(p) for p in lote.pendencias]
             model.atualizado_em = lote.atualizado_em
             model.processado_em = lote.processado_em
-            
+            model.caminho_arquivo_original = lote.caminho_arquivo_original
+            model.caminho_arquivo_saida = lote.caminho_arquivo_saida
+
             await self.session.commit()
             await self.session.refresh(model)
             return LoteMapper.to_entity(model)

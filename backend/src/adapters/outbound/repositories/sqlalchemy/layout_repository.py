@@ -33,6 +33,8 @@ class SQLAlchemyLayoutRepository(LayoutRepositoryPort):
             config_valor=ConfigValor.from_dict(model.config_valor_json or {}),
             config_historico_padrao=ConfigHistoricoPadrao.from_dict(model.config_historico_padrao_json or {}),
             regras_conta=[RegraContaLayout.from_dict(r) for r in (model.regras_conta_json or [])],
+            coluna_tipo_lancamento=getattr(model, 'coluna_tipo_lancamento', None),
+            coluna_grupo_lancamento=getattr(model, 'coluna_grupo_lancamento', None),
             criado_em=model.criado_em,
             atualizado_em=model.atualizado_em
         )
@@ -50,6 +52,8 @@ class SQLAlchemyLayoutRepository(LayoutRepositoryPort):
             config_valor_json=entity.config_valor.to_dict(),
             config_historico_padrao_json=entity.config_historico_padrao.to_dict(),
             regras_conta_json=[r.to_dict() for r in entity.regras_conta],
+            coluna_tipo_lancamento=entity.coluna_tipo_lancamento,
+            coluna_grupo_lancamento=entity.coluna_grupo_lancamento,
             criado_em=entity.criado_em,
             atualizado_em=entity.atualizado_em
         )
@@ -117,6 +121,8 @@ class SQLAlchemyLayoutRepository(LayoutRepositoryPort):
             model.config_valor_json = layout.config_valor.to_dict()
             model.config_historico_padrao_json = layout.config_historico_padrao.to_dict()
             model.regras_conta_json = [r.to_dict() for r in layout.regras_conta]
+            model.coluna_tipo_lancamento = layout.coluna_tipo_lancamento
+            model.coluna_grupo_lancamento = layout.coluna_grupo_lancamento
             model.atualizado_em = layout.atualizado_em
             await self.session.commit()
             await self.session.refresh(model)

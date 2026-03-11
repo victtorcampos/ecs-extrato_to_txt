@@ -30,23 +30,27 @@ class CriarLayoutUseCase:
         config_valor: Optional[dict] = None,
         config_historico_padrao: Optional[dict] = None,
         regras_conta: Optional[List[dict]] = None,
+        coluna_tipo_lancamento: Optional[str] = None,
+        coluna_grupo_lancamento: Optional[str] = None,
     ) -> LayoutExcel:
         """Cria um novo layout de importação"""
-        
+
         # Validar CNPJ
         cnpj_vo = CNPJ(cnpj)
-        
+
         # Verificar se já existe layout com mesmo nome para o CNPJ
         existente = await self.repository.buscar_por_nome(cnpj_vo.numerico, nome)
         if existente:
             raise LayoutInvalidoError(f"Já existe um layout com nome '{nome}' para este CNPJ")
-        
+
         # Criar layout
         layout = LayoutExcel(
             cnpj=cnpj_vo.numerico,
             nome=nome,
             descricao=descricao,
-            ativo=True
+            ativo=True,
+            coluna_tipo_lancamento=coluna_tipo_lancamento,
+            coluna_grupo_lancamento=coluna_grupo_lancamento,
         )
         
         # Configurar planilha
@@ -95,6 +99,8 @@ class AtualizarLayoutUseCase:
         config_valor: Optional[dict] = None,
         config_historico_padrao: Optional[dict] = None,
         regras_conta: Optional[List[dict]] = None,
+        coluna_tipo_lancamento: Optional[str] = None,
+        coluna_grupo_lancamento: Optional[str] = None,
     ) -> LayoutExcel:
         """Atualiza um layout existente"""
         
@@ -137,9 +143,14 @@ class AtualizarLayoutUseCase:
         
         if regras_conta is not None:
             layout.regras_conta = [RegraContaLayout.from_dict(r) for r in regras_conta]
-        
+
+        if coluna_tipo_lancamento is not None:
+            layout.coluna_tipo_lancamento = coluna_tipo_lancamento or None
+        if coluna_grupo_lancamento is not None:
+            layout.coluna_grupo_lancamento = coluna_grupo_lancamento or None
+
         layout.atualizado_em = datetime.now()
-        
+
         return await self.repository.atualizar(layout)
 
 

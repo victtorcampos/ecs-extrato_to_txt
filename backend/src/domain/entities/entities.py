@@ -6,6 +6,14 @@ from typing import Optional, List
 from uuid import uuid4
 
 
+class TipoLancamento(str, Enum):
+    """Tipos de lançamento no formato Domínio Sistemas"""
+    X = "X"  # 1 débito / 1 crédito
+    D = "D"  # 1 débito / N créditos
+    C = "C"  # N débitos / 1 crédito
+    V = "V"  # N débitos / N créditos balanceados
+
+
 class StatusLote(str, Enum):
     """Status possíveis de um lote"""
     AGUARDANDO = "aguardando"
@@ -37,6 +45,10 @@ class Lancamento:
     fantasia: str = ""
     fato_contabil: str = ""
     empresa: str = ""
+    
+    # Campos de agrupamento (para tipos D/C/V)
+    tipo_lancamento: str = TipoLancamento.X  # Tipo de lançamento (X, D, C ou V)
+    grupo_id: Optional[str] = None  # UUID de grupo para lançamentos D/C/V
     
     def esta_no_periodo(self, mes: int, ano: int) -> bool:
         """Verifica se o lançamento pertence ao período"""
@@ -71,12 +83,16 @@ class Lote:
     status: StatusLote = StatusLote.AGUARDANDO
     mensagem_erro: Optional[str] = None
     
-    # Arquivo original (base64)
+    # Arquivo original (base64 — legado)
     arquivo_original: Optional[str] = None
     nome_arquivo: Optional[str] = None
-    
-    # Arquivo processado (base64)
+
+    # Arquivo processado (base64 — legado)
     arquivo_saida: Optional[str] = None
+
+    # Caminhos para armazenamento em disco (novo)
+    caminho_arquivo_original: Optional[str] = None
+    caminho_arquivo_saida: Optional[str] = None
     
     # Lançamentos
     lancamentos: List[Lancamento] = field(default_factory=list)
@@ -128,4 +144,5 @@ class MapeamentoConta:
     conta_padrao: str = ""
     nome_conta_cliente: Optional[str] = None
     nome_conta_padrao: Optional[str] = None
+    layout_id: Optional[str] = None
     criado_em: datetime = field(default_factory=datetime.now)

@@ -12,7 +12,7 @@ from src.domain.exceptions import (
 )
 from src.application.ports.repositories import LoteRepositoryPort, MapeamentoContaRepositoryPort
 from src.application.ports.repositories.layout_repository_port import LayoutRepositoryPort
-from src.application.ports.services import ExcelParserPort, TxtGeneratorPort, EmailSenderPort
+from src.application.ports.services import ExcelParserPort, TxtGeneratorPort, EmailSenderPort, FileStoragePort
 from src.config.logging_config import get_logger
 
 logger = get_logger("usecases")
@@ -83,6 +83,7 @@ class ProcessarLoteUseCase:
         layout_repository: LayoutRepositoryPort = None,
         dynamic_parser=None,
         perfil_saida_repository=None,
+        file_storage: FileStoragePort = None,
     ):
         self.lote_repository = lote_repository
         self.mapeamento_repository = mapeamento_repository
@@ -92,6 +93,7 @@ class ProcessarLoteUseCase:
         self.layout_repository = layout_repository
         self.dynamic_parser = dynamic_parser
         self.perfil_saida_repository = perfil_saida_repository
+        self.file_storage = file_storage
     
     async def executar(self, lote_id: str) -> Lote:
         """Processa um lote existente"""
@@ -127,12 +129,30 @@ class ProcessarLoteUseCase:
             mapeamentos_existentes = await self.mapeamento_repository.listar_por_cnpj(lote.cnpj)
             mapeamentos_dict = {m.conta_cliente: m.conta_padrao for m in mapeamentos_existentes}
             
-            # Identificar contas sem mapeamento
+            # Coletar contas que são destinos de regras_conta (não precisam de mapeamento)
+            contas_de_regras: set = set()
+            if lote.layout_id and self.layout_repository:
+                layout_para_regras = await self.layout_repository.buscar_por_id(lote.layout_id)
+                if layout_para_regras:
+                    for regra in layout_para_regras.regras_conta:
+                        if regra.conta_debito:
+                            contas_de_regras.add(regra.conta_debito)
+                        if regra.conta_credito:
+                            contas_de_regras.add(regra.conta_credito)
+                        for acao in regra.acoes:
+                            if acao.campo_destino in ("conta_debito", "conta_credito") and acao.valor:
+                                contas_de_regras.add(acao.valor)
+
+            # Identificar contas sem mapeamento (excluindo destinos de regras)
             contas_sem_mapeamento = set()
             for lanc in lancamentos:
-                if lanc.conta_debito and lanc.conta_debito not in mapeamentos_dict:
+                if lanc.conta_debito \
+                        and lanc.conta_debito not in mapeamentos_dict \
+                        and lanc.conta_debito not in contas_de_regras:
                     contas_sem_mapeamento.add((lanc.conta_debito, "debito"))
-                if lanc.conta_credito and lanc.conta_credito not in mapeamentos_dict:
+                if lanc.conta_credito \
+                        and lanc.conta_credito not in mapeamentos_dict \
+                        and lanc.conta_credito not in contas_de_regras:
                     contas_sem_mapeamento.add((lanc.conta_credito, "credito"))
             
             if contas_sem_mapeamento:
@@ -153,10 +173,26 @@ class ProcessarLoteUseCase:
             
             # Gerar arquivo de saída usando perfil de saída (se disponível) ou TXT padrão
             arquivo_saida = await self._gerar_saida(lote, lancamentos, mapeamentos_dict)
-            
-            # Converter para base64
-            import base64
-            lote.arquivo_saida = base64.b64encode(arquivo_saida.encode('utf-8')).decode('utf-8')
+
+            # Salvar em disco se FileStoragePort disponível, senão usar Base64 (retrocompatibilidade)
+            if self.file_storage:
+                try:
+                    caminho = await self.file_storage.salvar(
+                        conteudo=arquivo_saida.encode('utf-8'),
+                        nome_arquivo=f"{lote.protocolo}.txt",
+                        subdiretorio="saidas"
+                    )
+                    lote.caminho_arquivo_saida = caminho
+                    lote.arquivo_saida = None  # Não armazenar Base64
+                except Exception as e:
+                    logger.error(f"Erro ao salvar arquivo em disco para {lote.protocolo}: {e}, usando Base64 como fallback")
+                    import base64
+                    lote.arquivo_saida = base64.b64encode(arquivo_saida.encode('utf-8')).decode('utf-8')
+            else:
+                # Fallback: usar Base64 se FileStorage não disponível
+                import base64
+                lote.arquivo_saida = base64.b64encode(arquivo_saida.encode('utf-8')).decode('utf-8')
+
             lote.status = StatusLote.CONCLUIDO
             lote.processado_em = datetime.now()
             lote.atualizado_em = datetime.now()

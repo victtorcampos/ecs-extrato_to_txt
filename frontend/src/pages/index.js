@@ -9,4 +9,5 @@ export { default as LayoutsPage } from './LayoutsPage';
 export { default as LayoutFormPage } from './LayoutFormPage';
 export { default as LayoutDetailPage } from './LayoutDetailPage';
 export { default as PerfisSaidaPage } from './PerfisSaidaPage';
+export { default as LayoutsSaidaPage } from './LayoutsSaidaPage';
 export { default as NotFoundPage } from './NotFoundPage';

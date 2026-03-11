@@ -360,7 +360,8 @@ class DetectarLayoutUseCase:
         """Executa auto-detecção completa"""
         # 1. Ler arquivo
         arquivo_bytes = base64.b64decode(arquivo_base64)
-        with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as tmp:
+        suffix = ".xlsx" if arquivo_bytes[:4] == b'PK\x03\x04' else ".xls"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp.write(arquivo_bytes)
             tmp_path = tmp.name
 
@@ -477,6 +478,7 @@ class PreviewParseUseCase:
         layout_id: Optional[str] = None,
         layout_config: Optional[Dict] = None,
         regras_conta: Optional[List[Dict]] = None,
+        mapeamentos_manuais: Optional[Dict[str, str]] = None,
     ) -> Dict:
         """Executa test-parse e retorna preview"""
         from src.domain.entities.layout_entities import LayoutExcel
@@ -512,6 +514,14 @@ class PreviewParseUseCase:
                 "resumo": {"total": 0, "ok": 0, "fora_periodo": 0, "sem_conta": 0, "erros": 1},
                 "erros": [{"linha": 0, "campo": "", "mensagem": str(e)}],
             }
+
+        # Aplicar mapeamentos manuais (do step 4 do wizard)
+        if mapeamentos_manuais:
+            for lanc in lancamentos:
+                if lanc.conta_debito and lanc.conta_debito in mapeamentos_manuais:
+                    lanc.conta_debito_mapeada = mapeamentos_manuais[lanc.conta_debito]
+                if lanc.conta_credito and lanc.conta_credito in mapeamentos_manuais:
+                    lanc.conta_credito_mapeada = mapeamentos_manuais[lanc.conta_credito]
 
         # Classificar cada lançamento
         preview_lancamentos = []

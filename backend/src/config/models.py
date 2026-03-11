@@ -26,6 +26,10 @@ class LoteModel(Base):
     arquivo_original = Column(Text, nullable=True)
     nome_arquivo = Column(String(255), nullable=True)
     arquivo_saida = Column(Text, nullable=True)
+
+    # Novos caminhos para armazenamento em disco
+    caminho_arquivo_original = Column(String, nullable=True)
+    caminho_arquivo_saida = Column(String, nullable=True)
     
     # JSON para lançamentos e pendências
     lancamentos_json = Column(JSON, default=list)
@@ -46,6 +50,7 @@ class MapeamentoContaModel(Base):
     conta_padrao = Column(String(50))
     nome_conta_cliente = Column(String(255), nullable=True)
     nome_conta_padrao = Column(String(255), nullable=True)
+    layout_id = Column(String(36), nullable=True, index=True)
     criado_em = Column(DateTime, default=datetime.now)
 
 
@@ -65,6 +70,10 @@ class LayoutExcelModel(Base):
     config_valor_json = Column(JSON, default=dict)
     config_historico_padrao_json = Column(JSON, default=dict)
     regras_conta_json = Column(JSON, default=list)
+    
+    # Colunas para leitura de tipo e grupo de lançamento
+    coluna_tipo_lancamento = Column(String(100), nullable=True)
+    coluna_grupo_lancamento = Column(String(100), nullable=True)
     
     criado_em = Column(DateTime, default=datetime.now)
     atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)

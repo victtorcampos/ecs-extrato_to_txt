@@ -29,6 +29,7 @@ async def get_session() -> AsyncSession:
 
 async def init_db():
     from src.config.logging_config import get_logger
+    import src.config.models  # noqa: F401 — registra models no Base.metadata
     logger = get_logger("database")
 
     async with engine.begin() as conn:
@@ -45,9 +46,24 @@ async def init_db():
         layout_cols = [row[1] for row in result2.fetchall()]
         if "regras_conta_json" not in layout_cols:
             await conn.execute(text("ALTER TABLE layouts_excel ADD COLUMN regras_conta_json JSON DEFAULT '[]'"))
+        # Migração: Fase 3 - adicionar coluna_tipo_lancamento e coluna_grupo_lancamento (T4.1)
+        if "coluna_tipo_lancamento" not in layout_cols:
+            await conn.execute(text("ALTER TABLE layouts_excel ADD COLUMN coluna_tipo_lancamento VARCHAR(10)"))
+        if "coluna_grupo_lancamento" not in layout_cols:
+            await conn.execute(text("ALTER TABLE layouts_excel ADD COLUMN coluna_grupo_lancamento VARCHAR(10)"))
+        # Nota T4.2: tipo_lancamento e grupo_id são armazenados em lancamentos_json (JSON) dentro LoteModel
+        # Os novos campos passam a fazer parte da serialização de Lancamento por padrão
+        logger.info("Migrations for Fase 3 (tipo_lancamento, grupo_id) completed")
         # Migração: criar índice em layout_id da tabela lotes (B-06)
         try:
             await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_lotes_layout_id ON lotes(layout_id)"))
         except Exception:
             pass  # Index may already exist
+        # Migração: adicionar colunas de caminho de arquivo (B-04)
+        result_lotes = await conn.execute(text("PRAGMA table_info(lotes)"))
+        lote_cols = [row[1] for row in result_lotes.fetchall()]
+        if "caminho_arquivo_original" not in lote_cols:
+            await conn.execute(text("ALTER TABLE lotes ADD COLUMN caminho_arquivo_original VARCHAR(255)"))
+        if "caminho_arquivo_saida" not in lote_cols:
+            await conn.execute(text("ALTER TABLE lotes ADD COLUMN caminho_arquivo_saida VARCHAR(255)"))
         logger.info("Database initialized successfully")

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { layoutsApi, regrasApi } from '../../services/api';
+import { AccountRulesBuilder } from './AccountRulesBuilder';
 import { cn, formatCNPJ } from '../../lib/utils';
 
 const TIPO_REGRA_LABELS = {
@@ -77,6 +78,8 @@ export const LayoutDetail = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingRegra, setEditingRegra] = useState(null);
+  const [regrasContaEdit, setRegrasContaEdit] = useState([]);
+  const [savingRegras, setSavingRegras] = useState(false);
   const [regraForm, setRegraForm] = useState({
     nome: '', descricao: '', tipo: 'filtro', ativo: true,
     condicoes: [emptyCondicao()], acao: emptyAcao(),
@@ -92,6 +95,7 @@ export const LayoutDetail = () => {
       ]);
       setLayout(layoutData);
       setRegras(regrasData.items);
+      setRegrasContaEdit(layoutData.regras_conta || []);
     } catch (err) {
       toast.error('Erro ao carregar dados');
       navigate('/layouts');
@@ -101,6 +105,22 @@ export const LayoutDetail = () => {
   };
 
   useEffect(() => { carregarDados(); }, [id]);
+
+  const handleSaveRegrasConta = async () => {
+    setSavingRegras(true);
+    try {
+      await layoutsApi.atualizar(id, {
+        ...layout,
+        regras_conta: regrasContaEdit,
+      });
+      toast.success('Mapeamento de contas salvo');
+      await carregarDados();
+    } catch (err) {
+      toast.error('Erro ao salvar mapeamento de contas');
+    } finally {
+      setSavingRegras(false);
+    }
+  };
 
   const abrirFormNovo = () => {
     setEditingRegra(null);
@@ -468,6 +488,26 @@ export const LayoutDetail = () => {
             </div>
           </div>
         )}
+      </section>
+
+      {/* Mapeamento de Contas */}
+      <section className="bg-white border border-slate-200 rounded-lg p-5" data-testid="mapeamento-contas-section">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-heading text-base font-semibold text-slate-900">Mapeamento de Contas</h2>
+          <button
+            onClick={handleSaveRegrasConta}
+            disabled={savingRegras}
+            data-testid="save-regras-conta-btn"
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-slate-900 text-white hover:bg-slate-800 rounded-md font-medium shadow-sm disabled:opacity-50 active:scale-95 transition-all"
+          >
+            <Save className="w-4 h-4" />
+            {savingRegras ? 'Salvando...' : 'Salvar mapeamento'}
+          </button>
+        </div>
+        <AccountRulesBuilder
+          regras={regrasContaEdit}
+          onChange={setRegrasContaEdit}
+        />
       </section>
     </div>
   );

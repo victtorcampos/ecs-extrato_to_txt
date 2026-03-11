@@ -206,49 +206,18 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
--e 
+
 # Environment files
 *.env
 *.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
+
+# Armazenamento de arquivos em disco (B-04)
+data/files/
 -e 
 # Environment files
 *.env
 *.env.*
 /frontend/node_modules
 frontend/package-lock.json
+*.db
+backend/contabil.db

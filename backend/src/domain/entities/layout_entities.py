@@ -14,6 +14,7 @@ class CondicaoContaLayout:
     operador: str = "igual"           # positivo, negativo, igual, diferente, contem, nao_contem, dc_debito, dc_credito
     valor: str = ""                   # Valor para comparação
     coluna_excel: str = ""            # Referência direta a coluna do Excel (alternativa ao campo)
+    operador_logico: str = "e"        # "e" (AND) ou "ou" (OR) — relação com a condição anterior
 
     def to_dict(self) -> dict:
         return {
@@ -21,6 +22,7 @@ class CondicaoContaLayout:
             "operador": self.operador,
             "valor": self.valor,
             "coluna_excel": self.coluna_excel,
+            "operador_logico": self.operador_logico,
         }
 
     @staticmethod
@@ -30,6 +32,27 @@ class CondicaoContaLayout:
             operador=data.get("operador", "igual"),
             valor=data.get("valor", ""),
             coluna_excel=data.get("coluna_excel", ""),
+            operador_logico=data.get("operador_logico", "e"),
+        )
+
+
+@dataclass
+class AcaoRegra:
+    """Ação a executar quando uma regra é ativada"""
+    campo_destino: str = ""           # "conta_debito", "conta_credito", "historico"
+    valor: str = ""                   # Valor a definir
+
+    def to_dict(self) -> dict:
+        return {
+            "campo_destino": self.campo_destino,
+            "valor": self.valor,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> 'AcaoRegra':
+        return AcaoRegra(
+            campo_destino=data.get("campo_destino", ""),
+            valor=data.get("valor", ""),
         )
 
 
@@ -40,9 +63,21 @@ class RegraContaLayout:
     nome: str = ""
     ordem: int = 0
     ativo: bool = True
-    condicoes: List[CondicaoContaLayout] = field(default_factory=list)  # AND — todas devem bater
-    conta_debito: str = ""
-    conta_credito: str = ""
+    condicoes: List[CondicaoContaLayout] = field(default_factory=list)  # AND/OR conforme operador_logico
+    conta_debito: str = ""            # Retrocompat: ação simples
+    conta_credito: str = ""           # Retrocompat: ação simples
+    acoes: List[AcaoRegra] = field(default_factory=list)  # Múltiplas ações
+
+    def obter_acoes_efetivas(self) -> List[AcaoRegra]:
+        """Retorna ações efetivas: usa `acoes` se preenchido, senão converte conta_debito/conta_credito"""
+        if self.acoes:
+            return self.acoes
+        resultado = []
+        if self.conta_debito:
+            resultado.append(AcaoRegra(campo_destino="conta_debito", valor=self.conta_debito))
+        if self.conta_credito:
+            resultado.append(AcaoRegra(campo_destino="conta_credito", valor=self.conta_credito))
+        return resultado
 
     def to_dict(self) -> dict:
         return {
@@ -53,6 +88,7 @@ class RegraContaLayout:
             "condicoes": [c.to_dict() for c in self.condicoes],
             "conta_debito": self.conta_debito,
             "conta_credito": self.conta_credito,
+            "acoes": [a.to_dict() for a in self.acoes],
         }
 
     @staticmethod
@@ -65,6 +101,7 @@ class RegraContaLayout:
             condicoes=[CondicaoContaLayout.from_dict(c) for c in data.get("condicoes", [])],
             conta_debito=data.get("conta_debito", ""),
             conta_credito=data.get("conta_credito", ""),
+            acoes=[AcaoRegra.from_dict(a) for a in data.get("acoes", [])],
         )
 
 
@@ -228,6 +265,10 @@ class LayoutExcel:
     config_historico_padrao: ConfigHistoricoPadrao = field(default_factory=ConfigHistoricoPadrao)
     regras_conta: List[RegraContaLayout] = field(default_factory=list)
     
+    # Colunas para ler tipo de lançamento e grupo de agrupamento
+    coluna_tipo_lancamento: Optional[str] = None  # Coluna que contém o tipo (X/D/C/V)
+    coluna_grupo_lancamento: Optional[str] = None  # Coluna que contém o grupo_id
+    
     criado_em: datetime = field(default_factory=datetime.now)
     atualizado_em: datetime = field(default_factory=datetime.now)
     
@@ -265,6 +306,8 @@ class LayoutExcel:
             "config_valor": self.config_valor.to_dict(),
             "config_historico_padrao": self.config_historico_padrao.to_dict(),
             "regras_conta": [r.to_dict() for r in self.regras_conta],
+            "coluna_tipo_lancamento": self.coluna_tipo_lancamento,
+            "coluna_grupo_lancamento": self.coluna_grupo_lancamento,
             "criado_em": self.criado_em.isoformat() if self.criado_em else None,
             "atualizado_em": self.atualizado_em.isoformat() if self.atualizado_em else None
         }
@@ -282,6 +325,8 @@ class LayoutExcel:
             config_valor=ConfigValor.from_dict(data.get("config_valor", {})),
             config_historico_padrao=ConfigHistoricoPadrao.from_dict(data.get("config_historico_padrao", {})),
             regras_conta=[RegraContaLayout.from_dict(r) for r in data.get("regras_conta", [])],
+            coluna_tipo_lancamento=data.get("coluna_tipo_lancamento"),
+            coluna_grupo_lancamento=data.get("coluna_grupo_lancamento"),
             criado_em=datetime.fromisoformat(data["criado_em"]) if data.get("criado_em") else datetime.now(),
             atualizado_em=datetime.fromisoformat(data["atualizado_em"]) if data.get("atualizado_em") else datetime.now()
         )

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui';
-import { Check, AlertTriangle, HelpCircle } from 'lucide-react';
+import { Check, AlertTriangle, HelpCircle, Library, ChevronUp, ChevronDown } from 'lucide-react';
 
 const CAMPOS_LABEL = {
   data: 'Data',
@@ -26,13 +26,56 @@ const ConfidenceBadge = ({ value }) => {
   return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700"><HelpCircle className="w-3 h-3" /> {Math.round(value * 100)}%</span>;
 };
 
-export const StepReview = ({ detection, onUpdateColumn, onBack, onNext }) => {
+export const StepReview = ({ detection, onUpdateColumn, layoutsDisponiveis, onApplyLayout, layoutAplicadoId, onBack, onNext }) => {
+  const [painelAberto, setPainelAberto] = useState(true);
+
   if (!detection) return null;
 
   const { config_planilha, colunas, config_valor, preview_dados } = detection;
 
   return (
     <div className="space-y-6" data-testid="step-review">
+
+      {/* Layouts salvos para este CNPJ */}
+      {layoutsDisponiveis?.length > 0 && (
+        <div className="border border-amber-200 rounded-lg bg-amber-50" data-testid="layouts-disponiveis">
+          <button
+            onClick={() => setPainelAberto(p => !p)}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-amber-800"
+          >
+            <span className="flex items-center gap-2">
+              <Library className="w-4 h-4" />
+              Layouts salvos para este CNPJ ({layoutsDisponiveis.length})
+            </span>
+            {painelAberto ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+          {painelAberto && (
+            <div className="px-4 pb-3 space-y-2">
+              {layoutsDisponiveis.map(layout => (
+                <div key={layout.id} className="flex items-center justify-between bg-white rounded-md p-3 border border-amber-100">
+                  <div>
+                    <p className="text-sm font-medium text-slate-800">{layout.nome}</p>
+                    <p className="text-xs text-slate-500">
+                      {layout.total_colunas} colunas • {layout.regras_conta?.length || layout.total_regras || 0} regras de contas
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {layoutAplicadoId === layout.id && (
+                      <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Aplicado
+                      </span>
+                    )}
+                    <Button size="sm" variant="outline" onClick={() => onApplyLayout(layout)} data-testid={`apply-layout-${layout.id}`}>
+                      {layoutAplicadoId === layout.id ? 'Reaplicar' : 'Aplicar'}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Structure info */}
       <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
         <h3 className="text-sm font-semibold text-slate-700 mb-2">Estrutura Detectada</h3>

@@ -193,6 +193,13 @@ class CondicaoContaLayoutDTO(BaseModel):
     operador: str = "igual"
     valor: str = ""
     coluna_excel: str = ""
+    operador_logico: str = "e"
+
+
+class AcaoRegraLayoutDTO(BaseModel):
+    """DTO para ação de regra de conta no layout"""
+    campo_destino: str = ""
+    valor: str = ""
 
 
 class RegraContaLayoutDTO(BaseModel):
@@ -204,6 +211,7 @@ class RegraContaLayoutDTO(BaseModel):
     condicoes: List[CondicaoContaLayoutDTO] = Field(default_factory=list)
     conta_debito: str = ""
     conta_credito: str = ""
+    acoes: List[AcaoRegraLayoutDTO] = Field(default_factory=list)
 
 
 class CriarLayoutRequest(BaseModel):
@@ -216,6 +224,8 @@ class CriarLayoutRequest(BaseModel):
     config_valor: Optional[ConfigValorDTO] = None
     config_historico_padrao: Optional[ConfigHistoricoPadraoDTO] = None
     regras_conta: Optional[List[RegraContaLayoutDTO]] = None
+    coluna_tipo_lancamento: Optional[str] = Field(None, description="Coluna Excel com tipo de lançamento (X/D/C/V)")
+    coluna_grupo_lancamento: Optional[str] = Field(None, description="Coluna Excel com grupo_id para tipos D/C/V")
 
 
 class AtualizarLayoutRequest(BaseModel):
@@ -228,6 +238,8 @@ class AtualizarLayoutRequest(BaseModel):
     config_valor: Optional[ConfigValorDTO] = None
     config_historico_padrao: Optional[ConfigHistoricoPadraoDTO] = None
     regras_conta: Optional[List[RegraContaLayoutDTO]] = None
+    coluna_tipo_lancamento: Optional[str] = Field(None, description="Coluna Excel com tipo de lançamento (X/D/C/V)")
+    coluna_grupo_lancamento: Optional[str] = Field(None, description="Coluna Excel com grupo_id para tipos D/C/V")
 
 
 class ClonarLayoutRequest(BaseModel):
@@ -472,6 +484,8 @@ class TestParseRequest(BaseModel):
     periodo_mes: int = Field(..., ge=1, le=12)
     periodo_ano: int = Field(..., ge=2000, le=2100)
     regras_conta: Optional[List[Dict]] = Field(default=None, description="Regras de conta opcionais")
+    mapeamentos_manuais: Optional[Dict[str, str]] = Field(default=None, description="Mapeamentos manuais conta_cliente->conta_padrao")
+    cnpj: Optional[str] = Field(default=None, description="CNPJ para buscar mapeamentos existentes")
 
 
 class LancamentoPreviewResponse(BaseModel):
@@ -503,8 +517,16 @@ class ErroTestParseResponse(BaseModel):
     mensagem: str = ""
 
 
+class ContaPendenteResponse(BaseModel):
+    """DTO para conta pendente de mapeamento no wizard"""
+    conta: str
+    tipo: str = "debito"
+    mapeamento_existente: Optional[str] = None
+
+
 class TestParseResponse(BaseModel):
     """DTO de resposta para test-parse (preview)"""
     lancamentos: List[LancamentoPreviewResponse] = Field(default_factory=list)
     resumo: ResumoTestParseResponse = Field(default_factory=ResumoTestParseResponse)
     erros: List[ErroTestParseResponse] = Field(default_factory=list)
+    contas_pendentes: List[ContaPendenteResponse] = Field(default_factory=list)

@@ -10,6 +10,7 @@ export { layoutsApi } from './layouts.api';
 export { mapeamentosApi } from './mapeamentos.api';
 export { regrasApi } from './regras.api';
 export { perfisSaidaApi } from './perfis-saida.api';
+export { layoutsSaidaApi } from './layouts-saida.api';
 
 export const healthCheck = async () => {
   const response = await apiClient.get('/api/health');

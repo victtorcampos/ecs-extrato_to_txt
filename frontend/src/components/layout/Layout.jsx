@@ -18,7 +18,7 @@ const navItems = [
   { path: '/lotes', label: 'Lotes', icon: FileText },
   { path: '/mapeamentos', label: 'Mapeamentos', icon: GitBranch },
   { path: '/layouts', label: 'Layouts', icon: FileSpreadsheet },
-  { path: '/perfis-saida', label: 'Perfis de Saída', icon: FileOutput },
+  { path: '/layouts-saida', label: 'Layout de Saída', icon: FileOutput },
 ];
 
 export const Sidebar = ({ isOpen, onClose }) => {

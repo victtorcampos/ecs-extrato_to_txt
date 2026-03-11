@@ -20,9 +20,10 @@ globs:
 Ao trabalhar neste projeto, consulte **apenas** os arquivos relevantes para a camada:
 
 ### Backend - Nucleo
-- `backend/src/domain/entities/entities.py` — Lote, Lancamento, MapeamentoConta, PendenciaMapeamento
-- `backend/src/domain/entities/layout_entities.py` — LayoutExcel, RegraContaLayout, CondicaoContaLayout, ColunaLayout
-- `backend/src/domain/entities/output_entities.py` — PerfilSaida
+- `backend/src/domain/entities/entities.py` — Lote, Lancamento (tipo_lancamento, grupo_id), MapeamentoConta, PendenciaMapeamento, TipoLancamento, StatusLote
+- `backend/src/domain/entities/layout_entities.py` — LayoutExcel (coluna_tipo_lancamento, coluna_grupo_lancamento), RegraContaLayout, CondicaoContaLayout, ColunaLayout
+- `backend/src/domain/entities/output_entities.py` — PerfilSaida, ConfigPerfilSaida, SistemaDestino, FormatoSaida
+- `backend/src/domain/entities/regra_entities.py` — RegraProcessamento, CondicaoRegra, AcaoRegra
 - `backend/src/application/usecases/usecases.py` — CriarProtocolo, ProcessarLote, ResolverPendencia
 - `backend/src/config/models.py` — ORM models (SQLAlchemy)
 
@@ -31,8 +32,13 @@ Ao trabalhar neste projeto, consulte **apenas** os arquivos relevantes para a ca
 - `backend/src/adapters/inbound/rest/controllers/` — Um controller por recurso
 
 ### Backend - Parsers (so se mexer em parsing)
-- `backend/src/adapters/outbound/excel_parser/dynamic_parser.py` — Parser com layout dinamico
-- `backend/src/adapters/outbound/excel_parser/excel_parser.py` — Parser padrao
+- `backend/src/adapters/outbound/excel_parser/dynamic_parser.py` — Parser com layout dinamico (le coluna_tipo_lancamento, coluna_grupo_lancamento)
+- `backend/src/adapters/outbound/excel_parser/excel_parser.py` — Parser padrao (CalamineExcelParser)
+
+### Backend - Output Generators (so se mexer em geracao de saida)
+- `backend/src/adapters/outbound/output_generators/dominio_sistemas_txt.py` — Gerador TXT Dominio Sistemas (tipos X/D/C/V, agrupamento, validacao por grupo)
+- `backend/src/adapters/outbound/output_generators/factory.py` — Factory: OutputGeneratorFactory (mapeia sistema+formato -> gerador)
+- `backend/src/adapters/outbound/file_storage/disk_storage.py` — DiskFileStorage (aiofiles, salva/le/deleta em data/files/)
 
 ### Frontend - Nucleo
 - `frontend/src/App.js` — Rotas
@@ -85,6 +91,8 @@ Para evitar duplicacao e tokens, estas sao as correspondencias:
 |:---|:---|:---|:---|:---|
 | Lote | `Lote` | `CriarLoteDTO` | `lote` | `/api/v1/lotes` |
 | Lancamento | `Lancamento` | inline em Lote | `lancamentos[]` | inline |
+| Tipo Lancamento | `TipoLancamento` (enum X/D/C/V) | campo `tipo_lancamento` no Lancamento | — | inline |
+| Grupo Lancamento | `Lancamento.grupo_id` (UUID) | campo `grupo_id` no Lancamento | — | inline (D/C/V) |
 | Layout Importacao | `LayoutExcel` | `CriarLayoutDTO` | `detection` | `/api/v1/import-layouts` |
 | Regra Conta | `RegraContaLayout` | inline em Layout | `regrasContas[]` | inline |
 | Mapeamento | `MapeamentoConta` | `MapeamentoDTO` | `mapeamentos[]` | `/api/v1/account-mappings` |
