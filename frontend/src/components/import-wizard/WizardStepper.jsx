@@ -6,7 +6,9 @@ const STEPS = [
   { id: 1, label: 'Upload', desc: 'Arquivo e dados' },
   { id: 2, label: 'Revisão', desc: 'Layout detectado' },
   { id: 3, label: 'Contas', desc: 'Regras de conta' },
-  { id: 4, label: 'Preview', desc: 'Validar resultado' },
+  { id: 4, label: 'Pendente', desc: 'Mapeamentos' },
+  { id: 5, label: 'Preview', desc: 'Validar resultado' },
+  { id: 6, label: 'Download', desc: 'Layout de saída' },
 ];
 
 export const WizardStepper = ({ currentStep }) => (

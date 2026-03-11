@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { WizardStepper } from './WizardStepper';
 import { StepUpload } from './StepUpload';
 import { StepReview } from './StepReview';
 import { StepAccounts } from './StepAccounts';
+import { StepPending } from './StepPending';
 import { StepPreview } from './StepPreview';
+import { StepDownload } from './StepDownload';
 import apiClient from '../../services/api/client';
 import { lotesApi } from '../../services/api/lotes.api';
-import { perfisSaidaApi } from '../../services/api/perfis-saida.api';
 
 export const ImportWizard = () => {
   const navigate = useNavigate();
@@ -21,11 +22,9 @@ export const ImportWizard = () => {
     periodo_mes: new Date().getMonth() + 1,
     periodo_ano: new Date().getFullYear(),
     email_notificacao: '',
-    perfil_saida_id: '',
   });
   const [file, setFile] = useState(null);
   const [fileBase64, setFileBase64] = useState(null);
-  const [perfisSaida, setPerfisSaida] = useState([]);
 
   // Step 2: Detection result
   const [detection, setDetection] = useState(null);
@@ -33,17 +32,20 @@ export const ImportWizard = () => {
   // Step 3: Account rules
   const [regrasContas, setRegrasContas] = useState([]);
 
-  // Step 4: Preview
+  // Step 4: Pending accounts
+  const [contasPendentes, setContasPendentes] = useState([]);
+  const [mapeamentosManuais, setMapeamentosManuais] = useState({});
+
+  // Step 5: Preview
   const [preview, setPreview] = useState(null);
 
-  // Load perfis de saída
-  useEffect(() => {
-    perfisSaidaApi.listar({ apenas_ativos: true }).then(res => {
-      setPerfisSaida(res.items || []);
-      const padrao = (res.items || []).find(p => p.padrao);
-      if (padrao) setFormData(prev => ({ ...prev, perfil_saida_id: padrao.id }));
-    }).catch(() => {});
-  }, []);
+  // Step 6: Download / Layout de Saída
+  const [layoutSaidaId, setLayoutSaidaId] = useState('');
+
+  // Computed
+  const hasUnresolvedPendencias = contasPendentes.some(
+    p => !mapeamentosManuais[p.conta] && !p.mapeamento_existente
+  );
 
   // ─── Step Handlers ──────────────────────────
 
@@ -70,60 +72,100 @@ export const ImportWizard = () => {
     setDetection(updated);
   };
 
-  const handleTestParse = async () => {
+  const buildLayoutConfig = () => ({
+    cnpj: formData.cnpj.replace(/\D/g, ''),
+    config_planilha: detection.config_planilha,
+    colunas: detection.colunas
+      .filter(c => c.campo_destino !== 'ignorar')
+      .map(c => ({
+        campo_destino: c.campo_destino,
+        coluna_excel: c.coluna_excel,
+        tipo_dado: c.tipo_dado,
+        formato: c.formato,
+        transformacao: c.transformacao || {},
+      })),
+    config_valor: detection.config_valor,
+  });
+
+  // Step 3 → 4: Check pending accounts
+  const handleCheckPendentes = async () => {
     if (!fileBase64 || !detection) return;
-    setStep(4);
     setLoading(true);
     try {
-      const layoutConfig = {
-        cnpj: formData.cnpj.replace(/\D/g, ''),
-        config_planilha: detection.config_planilha,
-        colunas: detection.colunas
-          .filter(c => c.campo_destino !== 'ignorar')
-          .map(c => ({
-            campo_destino: c.campo_destino,
-            coluna_excel: c.coluna_excel,
-            tipo_dado: c.tipo_dado,
-            formato: c.formato,
-            transformacao: c.transformacao || {},
-          })),
-        config_valor: detection.config_valor,
-      };
-
+      const layoutConfig = buildLayoutConfig();
       const response = await apiClient.post('/api/v1/import-layouts/test-parse', {
         arquivo_base64: fileBase64,
         layout_config: layoutConfig,
         periodo_mes: formData.periodo_mes,
         periodo_ano: formData.periodo_ano,
         regras_conta: regrasContas.length > 0 ? regrasContas : null,
+        cnpj: formData.cnpj.replace(/\D/g, ''),
       });
-      setPreview(response.data);
+
+      const pendentes = response.data.contas_pendentes || [];
+      setContasPendentes(pendentes);
+
+      // Pre-fill existing mappings
+      const mapeamentos = {};
+      pendentes.forEach(p => {
+        if (p.mapeamento_existente) {
+          mapeamentos[p.conta] = p.mapeamento_existente;
+        }
+      });
+      setMapeamentosManuais(mapeamentos);
+
+      // Skip step 4 if no pending accounts
+      if (pendentes.length === 0) {
+        setStep(5);
+        // Auto-run preview
+        await runTestParse(response.data);
+      } else {
+        setStep(4);
+      }
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro no test-parse');
-      setStep(3);
+      toast.error(err.response?.data?.detail || 'Erro ao verificar pendências');
     } finally {
       setLoading(false);
     }
   };
 
+  // Step 4 → 5: Run test-parse with manual mappings
+  const handleTestParse = async () => {
+    setStep(5);
+    setLoading(true);
+    try {
+      const layoutConfig = buildLayoutConfig();
+      const response = await apiClient.post('/api/v1/import-layouts/test-parse', {
+        arquivo_base64: fileBase64,
+        layout_config: layoutConfig,
+        periodo_mes: formData.periodo_mes,
+        periodo_ano: formData.periodo_ano,
+        regras_conta: regrasContas.length > 0 ? regrasContas : null,
+        mapeamentos_manuais: Object.keys(mapeamentosManuais).length > 0 ? mapeamentosManuais : null,
+        cnpj: formData.cnpj.replace(/\D/g, ''),
+      });
+      setPreview(response.data);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro no test-parse');
+      setStep(4);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper: set preview data directly (used when skipping step 4)
+  const runTestParse = async (data) => {
+    setPreview(data);
+  };
+
+  // Step 6: Process
   const handleProcess = async () => {
     if (!fileBase64) return;
     setLoading(true);
     try {
       const layoutConfig = {
-        cnpj: formData.cnpj.replace(/\D/g, ''),
+        ...buildLayoutConfig(),
         nome: `Auto-${file?.name || 'import'}-${Date.now()}`,
-        config_planilha: detection.config_planilha,
-        colunas: detection.colunas
-          .filter(c => c.campo_destino !== 'ignorar')
-          .map(c => ({
-            campo_destino: c.campo_destino,
-            coluna_excel: c.coluna_excel,
-            tipo_dado: c.tipo_dado,
-            formato: c.formato,
-            transformacao: c.transformacao || {},
-          })),
-        config_valor: detection.config_valor,
       };
 
       // Save layout
@@ -132,7 +174,7 @@ export const ImportWizard = () => {
         regras_conta: regrasContas.length > 0 ? regrasContas : [],
       });
 
-      // Create lote with perfil_saida_id
+      // Create lote
       const loteRes = await lotesApi.criar({
         cnpj: formData.cnpj.replace(/\D/g, ''),
         periodo_mes: formData.periodo_mes,
@@ -142,7 +184,7 @@ export const ImportWizard = () => {
         nome_arquivo: file?.name || 'import.xls',
         layout_id: layoutRes.data.id,
         nome_layout: layoutRes.data.nome,
-        perfil_saida_id: formData.perfil_saida_id || null,
+        perfil_saida_id: layoutSaidaId || null,
       });
 
       toast.success(`Lote ${loteRes.protocolo} criado! Processamento iniciado.`);
@@ -171,7 +213,6 @@ export const ImportWizard = () => {
             file={file}
             setFile={setFile}
             setFileBase64={setFileBase64}
-            perfisSaida={perfisSaida}
             onNext={handleDetect}
           />
         )}
@@ -189,25 +230,45 @@ export const ImportWizard = () => {
             regrasContas={regrasContas}
             setRegrasContas={setRegrasContas}
             onBack={() => setStep(2)}
-            onNext={handleTestParse}
+            onNext={handleCheckPendentes}
           />
         )}
         {step === 4 && (
+          <StepPending
+            contasPendentes={contasPendentes}
+            mapeamentosManuais={mapeamentosManuais}
+            setMapeamentosManuais={setMapeamentosManuais}
+            loading={false}
+            onBack={() => setStep(3)}
+            onNext={handleTestParse}
+          />
+        )}
+        {step === 5 && (
           <StepPreview
             preview={preview}
             loading={loading}
-            onBack={() => setStep(3)}
+            onBack={() => setStep(4)}
+            onProcess={() => setStep(6)}
+          />
+        )}
+        {step === 6 && (
+          <StepDownload
+            layoutSaidaId={layoutSaidaId}
+            setLayoutSaidaId={setLayoutSaidaId}
+            hasPendencias={hasUnresolvedPendencias}
+            onBack={() => setStep(5)}
             onProcess={handleProcess}
+            loading={loading}
           />
         )}
       </div>
 
-      {loading && step !== 4 && (
+      {loading && step !== 5 && (
         <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50" data-testid="loading-overlay">
           <div className="bg-white rounded-xl p-6 shadow-lg flex items-center gap-3">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
             <span className="text-sm text-slate-700">
-              {step === 1 ? 'Detectando layout...' : 'Processando...'}
+              {step === 1 ? 'Detectando layout...' : step === 3 ? 'Verificando pendências...' : 'Processando...'}
             </span>
           </div>
         </div>

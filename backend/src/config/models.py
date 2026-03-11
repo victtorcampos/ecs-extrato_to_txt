@@ -46,6 +46,7 @@ class MapeamentoContaModel(Base):
     conta_padrao = Column(String(50))
     nome_conta_cliente = Column(String(255), nullable=True)
     nome_conta_padrao = Column(String(255), nullable=True)
+    layout_id = Column(String(36), nullable=True, index=True)
     criado_em = Column(DateTime, default=datetime.now)
 
 

@@ -23,6 +23,7 @@ from src.adapters.inbound.rest.dto import (
     LancamentoPreviewResponse,
     ResumoTestParseResponse,
     ErroTestParseResponse,
+    ContaPendenteResponse,
 )
 from src.application.usecases import (
     CriarLayoutUseCase,
@@ -35,7 +36,7 @@ from src.application.usecases.detect_usecases import DetectarLayoutUseCase, Prev
 from src.domain.entities import LayoutExcel
 from src.domain.exceptions import DomainError, LayoutNaoEncontradoError
 from src.domain.value_objects import get_campos_disponiveis
-from src.config.dependencies import get_layout_repository, get_regra_repository
+from src.config.dependencies import get_layout_repository, get_regra_repository, get_mapeamento_repository
 from src.config.logging_config import get_logger
 
 logger = get_logger("layout_controller")
@@ -317,6 +318,7 @@ async def detectar_layout(request: DetectarLayoutRequest):
 async def test_parse(
     request: TestParseRequest,
     layout_repo=Depends(get_layout_repository),
+    mapeamento_repo=Depends(get_mapeamento_repository),
 ):
     """Simula parsing completo sem gravar — preview dos lançamentos"""
     try:
@@ -328,12 +330,44 @@ async def test_parse(
             layout_id=request.layout_id,
             layout_config=request.layout_config,
             regras_conta=request.regras_conta,
+            mapeamentos_manuais=request.mapeamentos_manuais,
         )
+
+        # Coletar contas pendentes (sem mapeamento)
+        contas_pendentes = []
+        contas_vistas = set()
+        mapeamentos_existentes = {}
+
+        # Buscar mapeamentos existentes do banco se CNPJ fornecido
+        if request.cnpj:
+            cnpj_limpo = request.cnpj.replace(".", "").replace("/", "").replace("-", "")
+            try:
+                maps = await mapeamento_repo.listar_por_cnpj(cnpj_limpo)
+                mapeamentos_existentes = {m.conta_cliente: m.conta_padrao for m in maps}
+            except Exception:
+                pass
+
+        mapeamentos_manuais = request.mapeamentos_manuais or {}
+
+        for lanc in resultado["lancamentos"]:
+            if lanc.get("status") == "ok":
+                continue
+            for tipo, campo in [("debito", "conta_debito"), ("credito", "conta_credito")]:
+                conta = lanc.get(campo, "")
+                chave = f"{conta}:{tipo}"
+                if conta and chave not in contas_vistas and conta not in mapeamentos_manuais:
+                    contas_vistas.add(chave)
+                    contas_pendentes.append(ContaPendenteResponse(
+                        conta=conta,
+                        tipo=tipo,
+                        mapeamento_existente=mapeamentos_existentes.get(conta),
+                    ))
 
         return TestParseResponse(
             lancamentos=[LancamentoPreviewResponse(**l) for l in resultado["lancamentos"]],
             resumo=ResumoTestParseResponse(**resultado["resumo"]),
             erros=[ErroTestParseResponse(**e) for e in resultado["erros"]],
+            contas_pendentes=contas_pendentes,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -14,6 +14,7 @@ class CondicaoContaLayout:
     operador: str = "igual"           # positivo, negativo, igual, diferente, contem, nao_contem, dc_debito, dc_credito
     valor: str = ""                   # Valor para comparação
     coluna_excel: str = ""            # Referência direta a coluna do Excel (alternativa ao campo)
+    operador_logico: str = "e"        # "e" (AND) ou "ou" (OR) — relação com a condição anterior
 
     def to_dict(self) -> dict:
         return {
@@ -21,6 +22,7 @@ class CondicaoContaLayout:
             "operador": self.operador,
             "valor": self.valor,
             "coluna_excel": self.coluna_excel,
+            "operador_logico": self.operador_logico,
         }
 
     @staticmethod
@@ -30,6 +32,27 @@ class CondicaoContaLayout:
             operador=data.get("operador", "igual"),
             valor=data.get("valor", ""),
             coluna_excel=data.get("coluna_excel", ""),
+            operador_logico=data.get("operador_logico", "e"),
+        )
+
+
+@dataclass
+class AcaoRegra:
+    """Ação a executar quando uma regra é ativada"""
+    campo_destino: str = ""           # "conta_debito", "conta_credito", "historico"
+    valor: str = ""                   # Valor a definir
+
+    def to_dict(self) -> dict:
+        return {
+            "campo_destino": self.campo_destino,
+            "valor": self.valor,
+        }
+
+    @staticmethod
+    def from_dict(data: dict) -> 'AcaoRegra':
+        return AcaoRegra(
+            campo_destino=data.get("campo_destino", ""),
+            valor=data.get("valor", ""),
         )
 
 
@@ -40,9 +63,21 @@ class RegraContaLayout:
     nome: str = ""
     ordem: int = 0
     ativo: bool = True
-    condicoes: List[CondicaoContaLayout] = field(default_factory=list)  # AND — todas devem bater
-    conta_debito: str = ""
-    conta_credito: str = ""
+    condicoes: List[CondicaoContaLayout] = field(default_factory=list)  # AND/OR conforme operador_logico
+    conta_debito: str = ""            # Retrocompat: ação simples
+    conta_credito: str = ""           # Retrocompat: ação simples
+    acoes: List[AcaoRegra] = field(default_factory=list)  # Múltiplas ações
+
+    def obter_acoes_efetivas(self) -> List[AcaoRegra]:
+        """Retorna ações efetivas: usa `acoes` se preenchido, senão converte conta_debito/conta_credito"""
+        if self.acoes:
+            return self.acoes
+        resultado = []
+        if self.conta_debito:
+            resultado.append(AcaoRegra(campo_destino="conta_debito", valor=self.conta_debito))
+        if self.conta_credito:
+            resultado.append(AcaoRegra(campo_destino="conta_credito", valor=self.conta_credito))
+        return resultado
 
     def to_dict(self) -> dict:
         return {
@@ -53,6 +88,7 @@ class RegraContaLayout:
             "condicoes": [c.to_dict() for c in self.condicoes],
             "conta_debito": self.conta_debito,
             "conta_credito": self.conta_credito,
+            "acoes": [a.to_dict() for a in self.acoes],
         }
 
     @staticmethod
@@ -65,6 +101,7 @@ class RegraContaLayout:
             condicoes=[CondicaoContaLayout.from_dict(c) for c in data.get("condicoes", [])],
             conta_debito=data.get("conta_debito", ""),
             conta_credito=data.get("conta_credito", ""),
+            acoes=[AcaoRegra.from_dict(a) for a in data.get("acoes", [])],
         )
 
 

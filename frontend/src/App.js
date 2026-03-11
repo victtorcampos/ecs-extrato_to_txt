@@ -17,6 +17,7 @@ const LayoutsPage = lazy(() => import('./pages/LayoutsPage'));
 const LayoutFormPage = lazy(() => import('./pages/LayoutFormPage'));
 const LayoutDetailPage = lazy(() => import('./pages/LayoutDetailPage'));
 const PerfisSaidaPage = lazy(() => import('./pages/PerfisSaidaPage'));
+const LayoutsSaidaPage = lazy(() => import('./pages/LayoutsSaidaPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function PageLoader() {
@@ -46,7 +47,8 @@ function App() {
             <Route path="/layouts/novo" element={<LayoutFormPage />} />
             <Route path="/layouts/:id" element={<LayoutDetailPage />} />
             <Route path="/layouts/:id/editar" element={<LayoutFormPage />} />
-            <Route path="/perfis-saida" element={<PerfisSaidaPage />} />
+            <Route path="/layouts-saida" element={<LayoutsSaidaPage />} />
+            <Route path="/perfis-saida" element={<Navigate to="/layouts-saida" replace />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>

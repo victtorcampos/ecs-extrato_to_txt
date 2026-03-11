@@ -3,7 +3,7 @@ import { Upload, FileSpreadsheet, X } from 'lucide-react';
 import { Button, Input } from '../ui';
 import { cn } from '../../lib/utils';
 
-export const StepUpload = ({ formData, setFormData, file, setFile, setFileBase64, perfisSaida = [], onNext }) => {
+export const StepUpload = ({ formData, setFormData, file, setFile, setFileBase64, onNext }) => {
   const fileInputRef = useRef(null);
 
   const handleFileSelect = (e) => {
@@ -100,31 +100,15 @@ export const StepUpload = ({ formData, setFormData, file, setFile, setFileBase64
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Email notificação</label>
-          <Input
-            type="email"
-            placeholder="email@empresa.com"
-            value={formData.email_notificacao}
-            onChange={(e) => setFormData(p => ({ ...p, email_notificacao: e.target.value }))}
-            data-testid="email-input"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Perfil de Saída</label>
-          <select
-            className="w-full h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
-            value={formData.perfil_saida_id}
-            onChange={(e) => setFormData(p => ({ ...p, perfil_saida_id: e.target.value }))}
-            data-testid="perfil-saida-select"
-          >
-            <option value="">Padrão (TXT)</option>
-            {perfisSaida.map(p => (
-              <option key={p.id} value={p.id}>{p.nome}{p.padrao ? ' (Padrão)' : ''}</option>
-            ))}
-          </select>
-        </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">Email notificação</label>
+        <Input
+          type="email"
+          placeholder="email@empresa.com"
+          value={formData.email_notificacao}
+          onChange={(e) => setFormData(p => ({ ...p, email_notificacao: e.target.value }))}
+          data-testid="email-input"
+        />
       </div>
 
       <div className="flex justify-end">

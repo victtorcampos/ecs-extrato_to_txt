@@ -128,4 +128,5 @@ class MapeamentoConta:
     conta_padrao: str = ""
     nome_conta_cliente: Optional[str] = None
     nome_conta_padrao: Optional[str] = None
+    layout_id: Optional[str] = None
     criado_em: datetime = field(default_factory=datetime.now)

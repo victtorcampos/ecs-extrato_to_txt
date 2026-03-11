@@ -374,7 +374,7 @@ class DynamicExcelParser:
         )
 
     def _avaliar_regras_conta(self, dados: dict, row: list, layout: LayoutExcel):
-        """Avalia regras de definição de contas em ordem. Primeira que bater, vence."""
+        """Avalia regras de definição de contas em ordem. Primeira que bater, aplica ações."""
         regras_ordenadas = sorted(
             [r for r in layout.regras_conta if r.ativo],
             key=lambda r: r.ordem
@@ -382,21 +382,35 @@ class DynamicExcelParser:
 
         for regra in regras_ordenadas:
             if self._regra_bate(regra, dados, row):
-                if regra.conta_debito:
-                    dados['conta_debito'] = regra.conta_debito
-                if regra.conta_credito:
-                    dados['conta_credito'] = regra.conta_credito
+                # Aplicar ações efetivas (acoes[] ou fallback conta_debito/conta_credito)
+                for acao in regra.obter_acoes_efetivas():
+                    if acao.campo_destino and acao.valor:
+                        dados[acao.campo_destino] = acao.valor
                 return  # Primeira que bater vence
 
     def _regra_bate(self, regra: RegraContaLayout, dados: dict, row: list) -> bool:
-        """Verifica se TODAS as condições da regra são atendidas (AND)"""
+        """Avalia condições com suporte a AND/OR via operador_logico."""
         if not regra.condicoes:
             return False
 
-        for cond in regra.condicoes:
-            if not self._condicao_bate(cond, dados, row):
-                return False
-        return True
+        # Agrupar condições em blocos AND separados por OR
+        # Ex: [C1(e) C2(ou) C3(e) C4] -> [[C1, C2], [C3, C4]]  (1a condição ignora operador_logico)
+        grupos = []
+        grupo_atual = []
+        for i, cond in enumerate(regra.condicoes):
+            if i > 0 and cond.operador_logico == "ou":
+                grupos.append(grupo_atual)
+                grupo_atual = []
+            grupo_atual.append(cond)
+        if grupo_atual:
+            grupos.append(grupo_atual)
+
+        # OR entre grupos, AND dentro de cada grupo
+        for grupo in grupos:
+            todas_ok = all(self._condicao_bate(c, dados, row) for c in grupo)
+            if todas_ok:
+                return True
+        return False
 
     def _condicao_bate(self, cond: CondicaoContaLayout, dados: dict, row: list) -> bool:
         """Avalia uma condição individual"""
