@@ -90,7 +90,9 @@ class LoteMapper:
             "unidade_negocio": l.unidade_negocio,
             "fantasia": l.fantasia,
             "fato_contabil": l.fato_contabil,
-            "empresa": l.empresa
+            "empresa": l.empresa,
+            "tipo_lancamento": l.tipo_lancamento if isinstance(l.tipo_lancamento, str) else (l.tipo_lancamento.value if l.tipo_lancamento else "X"),
+            "grupo_id": l.grupo_id
         }
     
     @staticmethod
@@ -115,7 +117,9 @@ class LoteMapper:
             unidade_negocio=d.get("unidade_negocio", ""),
             fantasia=d.get("fantasia", ""),
             fato_contabil=d.get("fato_contabil", ""),
-            empresa=d.get("empresa", "")
+            empresa=d.get("empresa", ""),
+            tipo_lancamento=d.get("tipo_lancamento", "X"),
+            grupo_id=d.get("grupo_id")
         )
     
     @staticmethod
