@@ -71,12 +71,16 @@ class Lote:
     status: StatusLote = StatusLote.AGUARDANDO
     mensagem_erro: Optional[str] = None
     
-    # Arquivo original (base64)
+    # Arquivo original (base64 — legado)
     arquivo_original: Optional[str] = None
     nome_arquivo: Optional[str] = None
-    
-    # Arquivo processado (base64)
+
+    # Arquivo processado (base64 — legado)
     arquivo_saida: Optional[str] = None
+
+    # Caminhos para armazenamento em disco (novo)
+    caminho_arquivo_original: Optional[str] = None
+    caminho_arquivo_saida: Optional[str] = None
     
     # Lançamentos
     lancamentos: List[Lancamento] = field(default_factory=list)

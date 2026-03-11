@@ -26,6 +26,10 @@ class LoteModel(Base):
     arquivo_original = Column(Text, nullable=True)
     nome_arquivo = Column(String(255), nullable=True)
     arquivo_saida = Column(Text, nullable=True)
+
+    # Novos caminhos para armazenamento em disco
+    caminho_arquivo_original = Column(String, nullable=True)
+    caminho_arquivo_saida = Column(String, nullable=True)
     
     # JSON para lançamentos e pendências
     lancamentos_json = Column(JSON, default=list)

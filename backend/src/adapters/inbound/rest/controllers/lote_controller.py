@@ -21,7 +21,7 @@ from src.application.usecases import (
 from src.domain.entities import Lote, StatusLote
 from src.domain.exceptions import DomainError
 from src.domain.value_objects import CNPJ
-from src.config.dependencies import get_lote_repository, get_mapeamento_repository
+from src.config.dependencies import get_lote_repository, get_mapeamento_repository, get_file_storage
 from src.config.logging_config import get_logger
 
 logger = get_logger("lote_controller")
@@ -32,6 +32,8 @@ router = APIRouter(prefix="/api/v1/lotes", tags=["Lotes"])
 def _lote_to_response(lote: Lote) -> LoteResponse:
     """Converte entidade Lote para DTO de resposta"""
     pendencias_resolvidas = sum(1 for p in lote.pendencias if p.resolvida)
+    # tem_arquivo_saida: verdadeiro se houver caminho em disco OU Base64 (retrocompatibilidade)
+    tem_arquivo = lote.caminho_arquivo_saida is not None or lote.arquivo_saida is not None
 
     return LoteResponse(
         id=lote.id,
@@ -47,7 +49,7 @@ def _lote_to_response(lote: Lote) -> LoteResponse:
         status=lote.status.value if isinstance(lote.status, StatusLote) else lote.status,
         mensagem_erro=lote.mensagem_erro,
         nome_arquivo=lote.nome_arquivo,
-        tem_arquivo_saida=lote.arquivo_saida is not None,
+        tem_arquivo_saida=tem_arquivo,
         total_lancamentos=len(lote.lancamentos),
         valor_total=sum(l.valor for l in lote.lancamentos),
         total_pendencias=len(lote.pendencias),
@@ -250,7 +252,11 @@ async def reprocessar_lote(
 
 
 @router.get("/{lote_id}/download")
-async def download_arquivo(lote_id: str, lote_repo=Depends(get_lote_repository)):
+async def download_arquivo(
+    lote_id: str,
+    lote_repo=Depends(get_lote_repository),
+    file_storage=Depends(get_file_storage),
+):
     """Faz download do arquivo TXT gerado"""
     from fastapi.responses import Response
     import base64
@@ -261,10 +267,25 @@ async def download_arquivo(lote_id: str, lote_repo=Depends(get_lote_repository))
     if not lote:
         raise HTTPException(status_code=404, detail="Lote não encontrado")
 
-    if not lote.arquivo_saida:
-        raise HTTPException(status_code=400, detail="Arquivo ainda não foi gerado")
+    arquivo_bytes = None
 
-    arquivo_bytes = base64.b64decode(lote.arquivo_saida)
+    # Priorizar leitura do disco (novo)
+    if lote.caminho_arquivo_saida:
+        try:
+            arquivo_bytes = await file_storage.ler(lote.caminho_arquivo_saida)
+        except Exception as e:
+            logger.error(f"Erro ao ler arquivo do disco ({lote.caminho_arquivo_saida}): {e}")
+            raise HTTPException(status_code=500, detail="Erro ao ler arquivo do disco")
+
+    # Fallback: Base64 (retrocompatibilidade)
+    elif lote.arquivo_saida:
+        try:
+            arquivo_bytes = base64.b64decode(lote.arquivo_saida)
+        except Exception as e:
+            logger.error(f"Erro ao decodificar Base64 para {lote_id}: {e}")
+            raise HTTPException(status_code=500, detail="Erro ao decodificar arquivo")
+    else:
+        raise HTTPException(status_code=400, detail="Arquivo ainda não foi gerado")
 
     return Response(
         content=arquivo_bytes,

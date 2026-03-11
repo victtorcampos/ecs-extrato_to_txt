@@ -54,6 +54,11 @@ def get_email_sender():
     return ResendEmailSender()
 
 
+def get_file_storage():
+    from src.adapters.outbound.file_storage import DiskFileStorage
+    return DiskFileStorage()
+
+
 # ─── Background Task Factory ───────────────────────────────────────
 
 async def create_processar_lote_dependencies():
@@ -78,6 +83,9 @@ async def create_processar_lote_dependencies():
         layout_repo = SQLAlchemyLayoutRepository(session)
         perfil_saida_repo = SQLAlchemyPerfilSaidaRepository(session)
 
+        from src.adapters.outbound.file_storage import DiskFileStorage
+        file_storage = DiskFileStorage()
+
         use_case = ProcessarLoteUseCase(
             lote_repo,
             mapeamento_repo,
@@ -87,6 +95,7 @@ async def create_processar_lote_dependencies():
             layout_repository=layout_repo,
             dynamic_parser=DynamicExcelParser(),
             perfil_saida_repository=perfil_saida_repo,
+            file_storage=file_storage,
         )
         return session, use_case
     except Exception as e:

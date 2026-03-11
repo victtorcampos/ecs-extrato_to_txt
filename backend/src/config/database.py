@@ -50,4 +50,11 @@ async def init_db():
             await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_lotes_layout_id ON lotes(layout_id)"))
         except Exception:
             pass  # Index may already exist
+        # Migração: adicionar colunas de caminho de arquivo (B-04)
+        result_lotes = await conn.execute(text("PRAGMA table_info(lotes)"))
+        lote_cols = [row[1] for row in result_lotes.fetchall()]
+        if "caminho_arquivo_original" not in lote_cols:
+            await conn.execute(text("ALTER TABLE lotes ADD COLUMN caminho_arquivo_original VARCHAR(255)"))
+        if "caminho_arquivo_saida" not in lote_cols:
+            await conn.execute(text("ALTER TABLE lotes ADD COLUMN caminho_arquivo_saida VARCHAR(255)"))
         logger.info("Database initialized successfully")
