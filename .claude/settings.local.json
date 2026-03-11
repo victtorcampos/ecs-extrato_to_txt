@@ -25,7 +25,9 @@
       "Bash(\"$VENV\" -c \"import xlwt; print\\(''xlwt installed ok''\\)\")",
       "Bash(__NEW_LINE_e4fd2c1aee61426b__ \"$VENV\" -c \":*)",
       "Bash(python -c \"import aiofiles; print\\(''aiofiles OK''\\)\")",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(find c:Apppythonecsecs-extrato_to_txtbackendsrcdomain -type f -name *.py)",
+      "Bash(find c:Apppythonecsecs-extrato_to_txtbackendsrcapplication -type f -name *.py)"
     ]
   }
 }
