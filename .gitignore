@@ -253,4 +253,3 @@ __marimo__/
 /frontend/node_modules
 frontend/package-lock.json
 *.db
-*.db
