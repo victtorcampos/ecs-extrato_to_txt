@@ -71,6 +71,10 @@ class LayoutExcelModel(Base):
     config_historico_padrao_json = Column(JSON, default=dict)
     regras_conta_json = Column(JSON, default=list)
     
+    # Colunas para leitura de tipo e grupo de lançamento
+    coluna_tipo_lancamento = Column(String(100), nullable=True)
+    coluna_grupo_lancamento = Column(String(100), nullable=True)
+    
     criado_em = Column(DateTime, default=datetime.now)
     atualizado_em = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 

@@ -245,7 +245,12 @@ class DynamicExcelParser:
         try:
             arquivo_bytes = base64.b64decode(arquivo_base64)
 
-            with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as tmp:
+            # Detecta formato pelos magic bytes:
+            #   xlsx (ZIP):  PK\x03\x04
+            #   xls  (OLE):  \xD0\xCF\x11\xE0
+            suffix = ".xlsx" if arquivo_bytes[:4] == b'PK\x03\x04' else ".xls"
+
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
                 tmp.write(arquivo_bytes)
                 tmp_path = tmp.name
 
@@ -329,6 +334,18 @@ class DynamicExcelParser:
 
             dados[coluna.campo_destino] = value
 
+        # Leitura adicional de tipo_lancamento e grupo_id se definidos no layout
+        # (Fase 3: Parser Extension para suporte X/D/C/V)
+        if layout.coluna_tipo_lancamento and 'tipo_lancamento' not in dados:
+            valor_tipo = _get_cell(row, layout.coluna_tipo_lancamento)
+            if valor_tipo:
+                dados['tipo_lancamento'] = _to_string(valor_tipo).upper()[:1]  # Garantir X/D/C/V
+        
+        if layout.coluna_grupo_lancamento and 'grupo_id' not in dados:
+            valor_grupo = _get_cell(row, layout.coluna_grupo_lancamento)
+            if valor_grupo:
+                dados['grupo_id'] = _to_string(valor_grupo)
+
         # Se a linha está completamente vazia nos campos essenciais, pular
         if not any(dados.get(k) for k in ('valor', 'conta_debito', 'conta_credito', 'data')):
             return None
@@ -371,6 +388,8 @@ class DynamicExcelParser:
             fantasia=_to_string(dados.get('fantasia', '')),
             fato_contabil=_to_string(dados.get('fato_contabil', '')),
             empresa=_to_string(dados.get('codigo_empresa', '')),
+            tipo_lancamento=_to_string(dados.get('tipo_lancamento', 'X')),
+            grupo_id=_to_string(dados.get('grupo_id', '')) or None,
         )
 
     def _avaliar_regras_conta(self, dados: dict, row: list, layout: LayoutExcel):

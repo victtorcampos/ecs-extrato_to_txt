@@ -41,9 +41,12 @@ class CalamineExcelParser(ExcelParserPort):
         try:
             # Decodificar base64
             arquivo_bytes = base64.b64decode(arquivo_base64)
-            
+
+            # Detecta formato pelos magic bytes (xlsx=ZIP PK\x03\x04, xls=OLE \xD0\xCF\x11\xE0)
+            suffix = ".xlsx" if arquivo_bytes[:4] == b'PK\x03\x04' else ".xls"
+
             # Salvar em arquivo temporário
-            with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as tmp:
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
                 tmp.write(arquivo_bytes)
                 tmp_path = tmp.name
             
@@ -158,10 +161,11 @@ class CalamineExcelParser(ExcelParserPort):
         """Valida se o arquivo tem a estrutura esperada"""
         try:
             arquivo_bytes = base64.b64decode(arquivo_base64)
-            with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as tmp:
+            suffix = ".xlsx" if arquivo_bytes[:4] == b'PK\x03\x04' else ".xls"
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
                 tmp.write(arquivo_bytes)
                 tmp_path = tmp.name
-            
+
             try:
                 wb = CalamineWorkbook.from_path(tmp_path)
                 if not wb.sheet_names:

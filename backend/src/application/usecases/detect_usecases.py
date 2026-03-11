@@ -360,7 +360,8 @@ class DetectarLayoutUseCase:
         """Executa auto-detecção completa"""
         # 1. Ler arquivo
         arquivo_bytes = base64.b64decode(arquivo_base64)
-        with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as tmp:
+        suffix = ".xlsx" if arquivo_bytes[:4] == b'PK\x03\x04' else ".xls"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp.write(arquivo_bytes)
             tmp_path = tmp.name
 

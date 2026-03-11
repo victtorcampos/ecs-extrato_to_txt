@@ -104,7 +104,8 @@ async def preview_excel(request: PreviewExcelRequest):
         from python_calamine import CalamineWorkbook
 
         arquivo_bytes = base64.b64decode(request.arquivo_base64)
-        with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as tmp:
+        suffix = ".xlsx" if arquivo_bytes[:4] == b'PK\x03\x04' else ".xls"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp.write(arquivo_bytes)
             tmp_path = tmp.name
 
@@ -206,6 +207,8 @@ async def criar_layout(
             config_valor=request.config_valor.model_dump() if request.config_valor else None,
             config_historico_padrao=request.config_historico_padrao.model_dump() if request.config_historico_padrao else None,
             regras_conta=[r.model_dump() for r in request.regras_conta] if request.regras_conta is not None else None,
+            coluna_tipo_lancamento=request.coluna_tipo_lancamento,
+            coluna_grupo_lancamento=request.coluna_grupo_lancamento,
         )
 
         return _layout_to_response(layout)
@@ -234,6 +237,8 @@ async def atualizar_layout(
             config_valor=request.config_valor.model_dump() if request.config_valor else None,
             config_historico_padrao=request.config_historico_padrao.model_dump() if request.config_historico_padrao else None,
             regras_conta=[r.model_dump() for r in request.regras_conta] if request.regras_conta is not None else None,
+            coluna_tipo_lancamento=request.coluna_tipo_lancamento,
+            coluna_grupo_lancamento=request.coluna_grupo_lancamento,
         )
 
         n_regras = await regra_repo.contar_por_layout(layout.id)

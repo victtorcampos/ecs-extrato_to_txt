@@ -46,6 +46,14 @@ async def init_db():
         layout_cols = [row[1] for row in result2.fetchall()]
         if "regras_conta_json" not in layout_cols:
             await conn.execute(text("ALTER TABLE layouts_excel ADD COLUMN regras_conta_json JSON DEFAULT '[]'"))
+        # Migração: Fase 3 - adicionar coluna_tipo_lancamento e coluna_grupo_lancamento (T4.1)
+        if "coluna_tipo_lancamento" not in layout_cols:
+            await conn.execute(text("ALTER TABLE layouts_excel ADD COLUMN coluna_tipo_lancamento VARCHAR(10)"))
+        if "coluna_grupo_lancamento" not in layout_cols:
+            await conn.execute(text("ALTER TABLE layouts_excel ADD COLUMN coluna_grupo_lancamento VARCHAR(10)"))
+        # Nota T4.2: tipo_lancamento e grupo_id são armazenados em lancamentos_json (JSON) dentro LoteModel
+        # Os novos campos passam a fazer parte da serialização de Lancamento por padrão
+        logger.info("Migrations for Fase 3 (tipo_lancamento, grupo_id) completed")
         # Migração: criar índice em layout_id da tabela lotes (B-06)
         try:
             await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_lotes_layout_id ON lotes(layout_id)"))

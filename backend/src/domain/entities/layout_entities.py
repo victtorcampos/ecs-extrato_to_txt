@@ -265,6 +265,10 @@ class LayoutExcel:
     config_historico_padrao: ConfigHistoricoPadrao = field(default_factory=ConfigHistoricoPadrao)
     regras_conta: List[RegraContaLayout] = field(default_factory=list)
     
+    # Colunas para ler tipo de lançamento e grupo de agrupamento
+    coluna_tipo_lancamento: Optional[str] = None  # Coluna que contém o tipo (X/D/C/V)
+    coluna_grupo_lancamento: Optional[str] = None  # Coluna que contém o grupo_id
+    
     criado_em: datetime = field(default_factory=datetime.now)
     atualizado_em: datetime = field(default_factory=datetime.now)
     
@@ -302,6 +306,8 @@ class LayoutExcel:
             "config_valor": self.config_valor.to_dict(),
             "config_historico_padrao": self.config_historico_padrao.to_dict(),
             "regras_conta": [r.to_dict() for r in self.regras_conta],
+            "coluna_tipo_lancamento": self.coluna_tipo_lancamento,
+            "coluna_grupo_lancamento": self.coluna_grupo_lancamento,
             "criado_em": self.criado_em.isoformat() if self.criado_em else None,
             "atualizado_em": self.atualizado_em.isoformat() if self.atualizado_em else None
         }
@@ -319,6 +325,8 @@ class LayoutExcel:
             config_valor=ConfigValor.from_dict(data.get("config_valor", {})),
             config_historico_padrao=ConfigHistoricoPadrao.from_dict(data.get("config_historico_padrao", {})),
             regras_conta=[RegraContaLayout.from_dict(r) for r in data.get("regras_conta", [])],
+            coluna_tipo_lancamento=data.get("coluna_tipo_lancamento"),
+            coluna_grupo_lancamento=data.get("coluna_grupo_lancamento"),
             criado_em=datetime.fromisoformat(data["criado_em"]) if data.get("criado_em") else datetime.now(),
             atualizado_em=datetime.fromisoformat(data["atualizado_em"]) if data.get("atualizado_em") else datetime.now()
         )

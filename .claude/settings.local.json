@@ -27,7 +27,8 @@
       "Bash(python -c \"import aiofiles; print\\(''aiofiles OK''\\)\")",
       "Bash(pip install:*)",
       "Bash(find c:Apppythonecsecs-extrato_to_txtbackendsrcdomain -type f -name *.py)",
-      "Bash(find c:Apppythonecsecs-extrato_to_txtbackendsrcapplication -type f -name *.py)"
+      "Bash(find c:Apppythonecsecs-extrato_to_txtbackendsrcapplication -type f -name *.py)",
+      "Bash(python teste_run/gerar_excels.py)"
     ]
   }
 }

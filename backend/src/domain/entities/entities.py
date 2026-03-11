@@ -6,6 +6,14 @@ from typing import Optional, List
 from uuid import uuid4
 
 
+class TipoLancamento(str, Enum):
+    """Tipos de lançamento no formato Domínio Sistemas"""
+    X = "X"  # 1 débito / 1 crédito
+    D = "D"  # 1 débito / N créditos
+    C = "C"  # N débitos / 1 crédito
+    V = "V"  # N débitos / N créditos balanceados
+
+
 class StatusLote(str, Enum):
     """Status possíveis de um lote"""
     AGUARDANDO = "aguardando"
@@ -37,6 +45,10 @@ class Lancamento:
     fantasia: str = ""
     fato_contabil: str = ""
     empresa: str = ""
+    
+    # Campos de agrupamento (para tipos D/C/V)
+    tipo_lancamento: str = TipoLancamento.X  # Tipo de lançamento (X, D, C ou V)
+    grupo_id: Optional[str] = None  # UUID de grupo para lançamentos D/C/V
     
     def esta_no_periodo(self, mes: int, ano: int) -> bool:
         """Verifica se o lançamento pertence ao período"""

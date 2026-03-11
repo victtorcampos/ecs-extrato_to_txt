@@ -224,6 +224,8 @@ class CriarLayoutRequest(BaseModel):
     config_valor: Optional[ConfigValorDTO] = None
     config_historico_padrao: Optional[ConfigHistoricoPadraoDTO] = None
     regras_conta: Optional[List[RegraContaLayoutDTO]] = None
+    coluna_tipo_lancamento: Optional[str] = Field(None, description="Coluna Excel com tipo de lançamento (X/D/C/V)")
+    coluna_grupo_lancamento: Optional[str] = Field(None, description="Coluna Excel com grupo_id para tipos D/C/V")
 
 
 class AtualizarLayoutRequest(BaseModel):
@@ -236,6 +238,8 @@ class AtualizarLayoutRequest(BaseModel):
     config_valor: Optional[ConfigValorDTO] = None
     config_historico_padrao: Optional[ConfigHistoricoPadraoDTO] = None
     regras_conta: Optional[List[RegraContaLayoutDTO]] = None
+    coluna_tipo_lancamento: Optional[str] = Field(None, description="Coluna Excel com tipo de lançamento (X/D/C/V)")
+    coluna_grupo_lancamento: Optional[str] = Field(None, description="Coluna Excel com grupo_id para tipos D/C/V")
 
 
 class ClonarLayoutRequest(BaseModel):
