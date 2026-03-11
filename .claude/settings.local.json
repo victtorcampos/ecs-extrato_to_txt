@@ -23,7 +23,9 @@
       "Bash(\"$VENV\" -c \"import xlwt; print\\(''xlwt ok''\\)\")",
       "Bash(\"$VENV\" -m pip install xlwt -q)",
       "Bash(\"$VENV\" -c \"import xlwt; print\\(''xlwt installed ok''\\)\")",
-      "Bash(__NEW_LINE_e4fd2c1aee61426b__ \"$VENV\" -c \":*)"
+      "Bash(__NEW_LINE_e4fd2c1aee61426b__ \"$VENV\" -c \":*)",
+      "Bash(python -c \"import aiofiles; print\\(''aiofiles OK''\\)\")",
+      "Bash(pip install:*)"
     ]
   }
 }
