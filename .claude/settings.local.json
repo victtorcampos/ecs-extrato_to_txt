@@ -1,40 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(source venv/Scripts/activate)",
-      "Bash(python -c \"import server; print\\(''''OK''''\\)\")",
-      "Bash(timeout 10 python -m uvicorn server:app --host 0.0.0.0 --port 8001)",
-      "Bash(timeout 8 python -m uvicorn server:app --host 0.0.0.0 --port 8001)",
-      "Bash(curl -s http://localhost:8001/api/v1/import-layouts?cnpj=01293422000165)",
-      "Bash(python -m json.tool)",
-      "Bash(curl -s \"http://localhost:8001/api/v1/account-mappings?cnpj=01293422000165\")",
-      "Bash(curl -s http://localhost:8001/api/v1/account-mappings?cnpj=01293422000165)",
-      "Bash(curl -s \"http://localhost:8001/api/v1/output-profiles\")",
-      "Bash(python -c \":*)",
-      "Bash(curl -s -X POST http://localhost:8001/api/v1/import-layouts/test-parse -H \"Content-Type: application/json\" -d @\"$TEMP/test_parse_payload.json\")",
-      "Bash(python -c \"import xlwt; print\\(''xlwt ok''\\)\")",
-      "Bash(python -c \"import xlrd; print\\(''xlrd ok''\\)\")",
-      "Bash(python -c \"import openpyxl; print\\(''openpyxl'', openpyxl.__version__\\)\")",
-      "Bash(python -c \"from python_calamine import CalamineWorkbook; print\\(''calamine ok''\\)\")",
-      "Bash(find c:/App/python/ecs/ecs-extrato_to_txt -name *.cfg -o -name venv -type d)",
-      "Bash(\"c:/App/python/ecs/ecs-extrato_to_txt/backend/venv/Scripts/python.exe\" -c \":*)",
-      "Bash(/dev/null find:*)",
-      "Bash(VENV=\"c:/App/python/ecs/ecs-extrato_to_txt/backend/venv/Scripts/python.exe\")",
-      "Bash(\"$VENV\" -c \"import xlwt; print\\(''xlwt ok''\\)\")",
-      "Bash(\"$VENV\" -m pip install xlwt -q)",
-      "Bash(\"$VENV\" -c \"import xlwt; print\\(''xlwt installed ok''\\)\")",
-      "Bash(__NEW_LINE_e4fd2c1aee61426b__ \"$VENV\" -c \":*)",
-      "Bash(python -c \"import aiofiles; print\\(''aiofiles OK''\\)\")",
-      "Bash(pip install:*)",
-      "Bash(find c:Apppythonecsecs-extrato_to_txtbackendsrcdomain -type f -name *.py)",
-      "Bash(find c:Apppythonecsecs-extrato_to_txtbackendsrcapplication -type f -name *.py)",
-      "Bash(python teste_run/gerar_excels.py)",
-      "Bash(del \"c:\\\\App\\\\python\\\\ecs\\\\ecs-extrato_to_txt\\\\backend\\\\src\\\\application\\\\ports\\\\services\\\\ofx_parser_port.py\")",
-      "Bash(echo \"from .service_ports import ExcelParserPort, TxtGeneratorPort, EmailSenderPort:*)",
-      "Bash(\"c:/App/python/ecs/ecs-extrato_to_txt/backend/src/application/ports/services/__init__.py\")",
-      "Bash(echo \"from .entities import Lote, Lancamento, StatusLote, TipoLancamento, PendenciaMapeamento, MapeamentoConta:*)",
-      "Bash(\"c:/App/python/ecs/ecs-extrato_to_txt/backend/src/domain/entities/__init__.py\")",
-      "Bash(venv/Scripts/python.exe -:*)"
+      "Bash(*)"
     ]
   }
 }
