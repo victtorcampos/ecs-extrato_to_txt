@@ -1,6 +1,6 @@
 import {
   ChangeDetectionStrategy, Component, OnInit,
-  inject, signal
+  inject, signal, computed,
 } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,14 +9,15 @@ import { ImportLayoutService } from '../../../core/services/import-layout.servic
 import { OutputProfileService } from '../../../core/services/output-profile.service';
 import { SessionService } from '../../../core/services/session.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { ImportLayout } from '../../../core/models/import-layout.model';
+import { ImportLayout, ImportLayoutCompleto, CamposDisponiveisResponse } from '../../../core/models/import-layout.model';
 import { OutputProfile } from '../../../core/models/output-profile.model';
 import { SpinnerComponent } from '../../../shared/components/spinner/spinner.component';
+import { LayoutWizardComponent } from './layout-wizard.component';
 
 @Component({
   selector: 'app-upload',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, SpinnerComponent],
+  imports: [ReactiveFormsModule, SpinnerComponent, LayoutWizardComponent],
   template: `
     <div class="max-w-2xl">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -102,22 +103,33 @@ import { SpinnerComponent } from '../../../shared/components/spinner/spinner.com
         </div>
 
         <!-- Layout de importacao -->
-        <!-- Layout de importacao -->
         <div class="mb-4">
           <label for="layout_id" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1.5">
             Layout de Importação
           </label>
-          <select
-            id="layout_id"
-            formControlName="layout_id"
-            class="w-full h-10 px-3 border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:border-slate-900 transition-colors duration-150"
-            data-testid="select-import-layout"
-          >
-            <option value="">Selecione um layout...</option>
-            @for (layout of importLayouts(); track layout.id) {
-              <option [value]="layout.id">{{ layout.nome }}</option>
-            }
-          </select>
+          <div class="flex gap-2">
+            <select
+              id="layout_id"
+              formControlName="layout_id"
+              class="flex-1 h-10 px-3 border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:border-slate-900 transition-colors duration-150"
+              data-testid="select-import-layout"
+            >
+              <option value="">Selecione um layout...</option>
+              @for (layout of importLayouts(); track layout.id) {
+                <option [value]="layout.id">{{ layout.nome }}</option>
+              }
+            </select>
+            <button
+              type="button"
+              (click)="abrirWizard()"
+              [disabled]="!selectedFile()"
+              class="h-10 px-3 border border-slate-300 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap transition-colors duration-150"
+              [attr.title]="selectedFile() ? 'Criar novo layout' : 'Selecione um arquivo primeiro'"
+              data-testid="criar-layout-btn"
+            >
+              + Criar novo
+            </button>
+          </div>
           @if (loadingLayouts()) {
             <p class="text-xs text-slate-400 mt-1">Carregando layouts...</p>
           }
@@ -165,6 +177,18 @@ import { SpinnerComponent } from '../../../shared/components/spinner/spinner.com
         </button>
       </form>
     </div>
+
+    <!-- Wizard Modal -->
+    <app-layout-wizard
+      [isOpen]="wizardOpen()"
+      [arquivo]="selectedFile()"
+      [periodoMes]="periodoMesValue()"
+      [periodoAno]="periodoAnoValue()"
+      [cnpj]="cnpjAtivo()"
+      [campos]="camposDisponiveis()"
+      (layoutCreatedEvent)="onLayoutCriado($event)"
+      (closedEvent)="wizardOpen.set(false)"
+    />
   `,
 })
 export class UploadComponent implements OnInit {
@@ -176,12 +200,14 @@ export class UploadComponent implements OnInit {
   private readonly toastService = inject(ToastService);
   private readonly router = inject(Router);
 
-  selectedFile = signal<File | null>(null);
-  submitting = signal(false);
-  importLayouts = signal<ImportLayout[]>([]);
-  outputProfiles = signal<OutputProfile[]>([]);
-  loadingLayouts = signal(false);
-  loadingProfiles = signal(false);
+  selectedFile      = signal<File | null>(null);
+  submitting        = signal(false);
+  importLayouts     = signal<ImportLayout[]>([]);
+  outputProfiles    = signal<OutputProfile[]>([]);
+  loadingLayouts    = signal(false);
+  loadingProfiles   = signal(false);
+  wizardOpen        = signal(false);
+  camposDisponiveis = signal<CamposDisponiveisResponse>({});
 
   readonly meses = [
     { v: 1, label: '01' }, { v: 2, label: '02' }, { v: 3, label: '03' }, { v: 4, label: '04' },
@@ -190,11 +216,15 @@ export class UploadComponent implements OnInit {
   ];
 
   form = this.fb.group({
-    periodo_mes: ['', Validators.required],
-    periodo_ano: [new Date().getFullYear(), [Validators.required, Validators.min(2000), Validators.max(2100)]],
-    layout_id: ['', Validators.required],
+    periodo_mes:     ['', Validators.required],
+    periodo_ano:     [new Date().getFullYear(), [Validators.required, Validators.min(2000), Validators.max(2100)]],
+    layout_id:       ['', Validators.required],
     perfil_saida_id: ['', Validators.required],
   });
+
+  cnpjAtivo       = computed(() => this.sessionService.activeSession()?.cnpj ?? null);
+  periodoMesValue = computed(() => Number(this.form.get('periodo_mes')?.value) || 1);
+  periodoAnoValue = computed(() => Number(this.form.get('periodo_ano')?.value) || new Date().getFullYear());
 
   fileSizeLabel(): string {
     const f = this.selectedFile();
@@ -214,6 +244,10 @@ export class UploadComponent implements OnInit {
     this.outputProfileService.list({ apenas_ativos: true }).subscribe({
       next: (p) => { this.outputProfiles.set(p); this.loadingProfiles.set(false); },
       error: () => { this.loadingProfiles.set(false); },
+    });
+    this.importLayoutService.camposDisponiveis().subscribe({
+      next: (c) => this.camposDisponiveis.set(c),
+      error: () => {},
     });
   }
 
@@ -239,6 +273,16 @@ export class UploadComponent implements OnInit {
   clearFile(event: MouseEvent): void {
     event.stopPropagation();
     this.selectedFile.set(null);
+  }
+
+  abrirWizard(): void {
+    if (!this.selectedFile()) return;
+    this.wizardOpen.set(true);
+  }
+
+  onLayoutCriado(layout: ImportLayoutCompleto): void {
+    this.importLayouts.update(list => [...list, layout]);
+    this.form.patchValue({ layout_id: layout.id });
   }
 
   onSubmit(): void {

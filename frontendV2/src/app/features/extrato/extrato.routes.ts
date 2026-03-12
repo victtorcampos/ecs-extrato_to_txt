@@ -33,9 +33,39 @@ export const extratoRoutes: Routes = [
           import('./import-layout/import-layout.component').then(m => m.ImportLayoutComponent),
       },
       {
+        path: 'import-layout/new',
+        loadComponent: () =>
+          import('./import-layout/import-layout-form.component').then(m => m.ImportLayoutFormComponent),
+      },
+      {
+        path: 'import-layout/:id/edit',
+        loadComponent: () =>
+          import('./import-layout/import-layout-form.component').then(m => m.ImportLayoutFormComponent),
+      },
+      {
+        path: 'import-layout/:layoutId/rules/new',
+        loadComponent: () =>
+          import('./import-layout/regras/regra-form.component').then(m => m.RegraFormComponent),
+      },
+      {
+        path: 'import-layout/:layoutId/rules/:id/edit',
+        loadComponent: () =>
+          import('./import-layout/regras/regra-form.component').then(m => m.RegraFormComponent),
+      },
+      {
         path: 'output-layout',
         loadComponent: () =>
           import('./output-layout/output-layout.component').then(m => m.OutputLayoutComponent),
+      },
+      {
+        path: 'output-layout/new',
+        loadComponent: () =>
+          import('./output-layout/output-layout-form.component').then(m => m.OutputLayoutFormComponent),
+      },
+      {
+        path: 'output-layout/:id/edit',
+        loadComponent: () =>
+          import('./output-layout/output-layout-form.component').then(m => m.OutputLayoutFormComponent),
       },
     ],
   },
