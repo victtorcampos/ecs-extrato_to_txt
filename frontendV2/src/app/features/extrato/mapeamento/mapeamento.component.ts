@@ -41,43 +41,31 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
           </h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
-              <label for="conta_origem" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1">
+              <label for="conta_cliente" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1">
                 Conta Origem
               </label>
               <input
-                id="conta_origem"
+                id="conta_cliente"
                 type="text"
-                formControlName="conta_origem"
+                formControlName="conta_cliente"
                 class="w-full h-9 px-3 border border-slate-300 bg-white text-sm focus:outline-none focus:border-slate-900 font-mono transition-colors duration-150"
                 placeholder="Ex: 1001"
                 data-testid="input-conta-origem"
               />
             </div>
             <div>
-              <label for="conta_destino" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1">
+              <label for="conta_padrao" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1">
                 Conta Destino
               </label>
               <input
-                id="conta_destino"
+                id="conta_padrao"
                 type="text"
-                formControlName="conta_destino"
+                formControlName="conta_padrao"
                 class="w-full h-9 px-3 border border-slate-300 bg-white text-sm focus:outline-none focus:border-slate-900 font-mono transition-colors duration-150"
                 placeholder="Ex: 1.1.01.001"
                 data-testid="input-conta-destino"
               />
             </div>
-          </div>
-          <div class="mb-4">
-            <label for="descricao" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1">
-              Descrição (opcional)
-            </label>
-            <input
-              id="descricao"
-              type="text"
-              formControlName="descricao"
-              class="w-full h-9 px-3 border border-slate-300 bg-white text-sm focus:outline-none focus:border-slate-900 transition-colors duration-150"
-              data-testid="input-descricao"
-            />
           </div>
           <div class="flex gap-3">
             <button
@@ -115,22 +103,20 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
               <tr>
                 <th scope="col" class="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Conta Origem</th>
                 <th scope="col" class="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Conta Destino</th>
-                <th scope="col" class="text-left px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Descrição</th>
                 <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
               @for (m of mappings(); track m.id) {
                 <tr class="hover:bg-slate-50/60 transition-colors duration-100">
-                  <td class="px-4 py-3 font-mono text-slate-900 text-xs">{{ m.conta_origem }}</td>
-                  <td class="px-4 py-3 font-mono text-slate-900 text-xs">{{ m.conta_destino }}</td>
-                  <td class="px-4 py-3 text-slate-500 text-xs">{{ m.descricao || '—' }}</td>
+                  <td class="px-4 py-3 font-mono text-slate-900 text-xs">{{ m.conta_cliente }}</td>
+                  <td class="px-4 py-3 font-mono text-slate-900 text-xs">{{ m.conta_padrao }}</td>
                   <td class="px-4 py-3">
                     <div class="flex items-center justify-end gap-2">
                       <button
                         (click)="openForm(m)"
                         class="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-sm transition-colors duration-150"
-                        [attr.aria-label]="'Editar mapeamento ' + m.conta_origem"
+                        [attr.aria-label]="'Editar mapeamento ' + m.conta_cliente"
                         data-testid="edit-mapping-btn"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -141,7 +127,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
                       <button
                         (click)="confirmDel(m)"
                         class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-sm transition-colors duration-150"
-                        [attr.aria-label]="'Deletar mapeamento ' + m.conta_origem"
+                        [attr.aria-label]="'Deletar mapeamento ' + m.conta_cliente"
                         data-testid="delete-mapping-btn"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -185,9 +171,8 @@ export class MapeamentoComponent implements OnInit {
   toDelete = signal<AccountMapping | null>(null);
 
   form = this.fb.group({
-    conta_origem: ['', Validators.required],
-    conta_destino: ['', Validators.required],
-    descricao: [''],
+    conta_cliente: ['', Validators.required],
+    conta_padrao: ['', Validators.required]
   });
 
   ngOnInit(): void { this.load(); }
@@ -203,7 +188,7 @@ export class MapeamentoComponent implements OnInit {
 
   openForm(m?: AccountMapping): void {
     this.editId.set(m?.id ?? null);
-    this.form.reset({ conta_origem: m?.conta_origem ?? '', conta_destino: m?.conta_destino ?? '', descricao: m?.descricao ?? '' });
+    this.form.reset({ conta_cliente: m?.conta_cliente ?? '', conta_padrao: m?.conta_padrao ?? '' });
     this.formOpen.set(true);
   }
 
@@ -212,7 +197,12 @@ export class MapeamentoComponent implements OnInit {
   save(): void {
     if (this.form.invalid) return;
     const cnpj = this.sessionService.activeSession()?.cnpj ?? '';
-    const body = { ...this.form.getRawValue(), cnpj };
+    const { conta_cliente, conta_padrao } = this.form.getRawValue();
+    const body: Partial<AccountMapping> = {
+      cnpj,
+      conta_cliente: conta_cliente ?? undefined,
+      conta_padrao: conta_padrao ?? undefined,
+    };
     this.saving.set(true);
     const id = this.editId();
     const req = id ? this.service.update(id, body) : this.service.create(body);

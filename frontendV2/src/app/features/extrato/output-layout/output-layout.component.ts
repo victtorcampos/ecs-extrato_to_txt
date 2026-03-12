@@ -5,7 +5,7 @@ import {
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { OutputProfileService } from '../../../core/services/output-profile.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { OutputProfile } from '../../../core/models/output-profile.model';
+import { OutputProfile, OutputSistema } from '../../../core/models/output-profile.model';
 import { SpinnerComponent } from '../../../shared/components/spinner/spinner.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
@@ -36,7 +36,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
           <h3 class="text-sm font-semibold text-slate-900 mb-4">
             {{ editId() ? 'Editar Perfil' : 'Novo Perfil de Saída' }}
           </h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <div>
               <label for="profile-nome" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1">Nome</label>
               <input id="profile-nome" type="text" formControlName="nome"
@@ -49,8 +49,21 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
                 class="w-full h-9 px-3 border border-slate-300 bg-white text-sm focus:outline-none focus:border-slate-900 transition-colors duration-150"
                 data-testid="select-sistema">
                 <option value="">Selecione...</option>
-                @for (s of sistemas(); track s) {
-                  <option [value]="s">{{ s }}</option>
+                @for (s of sistemas(); track s.value) {
+                  <option [value]="s.value">{{ s.nome }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label for="profile-formato" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1">Formato</label>
+              <select id="profile-formato" formControlName="formato"
+                class="w-full h-9 px-3 border border-slate-300 bg-white text-sm focus:outline-none focus:border-slate-900 transition-colors duration-150"
+                data-testid="select-formato">
+                <option value="">Selecione...</option>
+                @for (s of sistemas(); track s.value) {
+                  @for (f of s.formatos; track f.value) {
+                    <option [value]="f.value">{{ f.nome }}</option>
+                  }
                 }
               </select>
             </div>
@@ -87,7 +100,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
             <div class="flex items-center justify-between p-4 bg-white border border-slate-200 hover:border-slate-300 transition-colors duration-150">
               <div>
                 <p class="text-sm font-medium text-slate-900">{{ p.nome }}</p>
-                <p class="text-xs text-slate-500 mt-0.5">Sistema: <span class="font-mono">{{ p.sistema }}</span></p>
+                <p class="text-xs text-slate-500 mt-0.5">Sistema: <span class="font-mono">{{ p.sistema_destino }}</span></p>
               </div>
               <div class="flex items-center gap-2">
                 <span [class]="p.ativo ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'"
@@ -128,7 +141,7 @@ export class OutputLayoutComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   profiles = signal<OutputProfile[]>([]);
-  sistemas = signal<string[]>([]);
+  sistemas = signal<OutputSistema[]>([]);
   loading = signal(false);
   saving = signal(false);
   formOpen = signal(false);
@@ -138,7 +151,8 @@ export class OutputLayoutComponent implements OnInit {
 
   form = this.fb.group({
     nome: ['', Validators.required],
-    sistema: ['', Validators.required],
+    sistema_destino: ['', Validators.required],
+    formato: ['', Validators.required],
     descricao: [''],
   });
 
@@ -157,7 +171,7 @@ export class OutputLayoutComponent implements OnInit {
 
   openForm(p?: OutputProfile): void {
     this.editId.set(p?.id ?? null);
-    this.form.reset({ nome: p?.nome ?? '', sistema: p?.sistema ?? '', descricao: p?.descricao ?? '' });
+    this.form.reset({ nome: p?.nome ?? '', sistema_destino: p?.sistema_destino ?? '', formato: p?.formato ?? '', descricao: p?.descricao ?? '' });
     this.formOpen.set(true);
   }
 
@@ -167,7 +181,14 @@ export class OutputLayoutComponent implements OnInit {
     if (this.form.invalid) return;
     this.saving.set(true);
     const id = this.editId();
-    const req = id ? this.service.update(id, this.form.getRawValue()) : this.service.create(this.form.getRawValue());
+    const { nome, sistema_destino, formato, descricao } = this.form.getRawValue();
+    const body: Record<string, unknown> = {
+      nome: nome ?? undefined,
+      sistema_destino: sistema_destino ?? undefined,
+      formato: formato ?? undefined,
+      descricao: descricao ?? undefined,
+    };
+    const req = id ? this.service.update(id, body) : this.service.create(body);
     req.subscribe({
       next: () => { this.saving.set(false); this.closeForm(); this.load(); this.toastService.success('Perfil salvo.'); },
       error: () => { this.saving.set(false); this.toastService.error('Erro ao salvar perfil.'); },

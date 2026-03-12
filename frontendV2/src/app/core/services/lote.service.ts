@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { Lote, LoteCreateRequest, LoteEstatisticas, LoteListParams } from '../models/lote.model';
 
@@ -12,7 +12,17 @@ export class LoteService {
   }
 
   estatisticas(cnpj?: string): Observable<LoteEstatisticas> {
-    return this.api.get<LoteEstatisticas>('/lotes/estatisticas', cnpj ? { cnpj } : undefined);
+    return this.api.get<{ total: number; por_status: Record<string, number> }>(
+      '/lotes/estatisticas',
+      cnpj ? { cnpj } : undefined
+    ).pipe(
+      map(r => ({
+        total: r.total,
+        concluidos: r.por_status['concluido'] ?? 0,
+        pendentes: r.por_status['pendente'] ?? 0,
+        processando: r.por_status['processando'] ?? 0,
+      }))
+    );
   }
 
   get(id: string): Observable<Lote> {
@@ -20,12 +30,7 @@ export class LoteService {
   }
 
   create(req: LoteCreateRequest): Observable<Lote> {
-    const fd = new FormData();
-    fd.append('cnpj', req.cnpj);
-    fd.append('import_layout_id', req.import_layout_id);
-    fd.append('output_profile_id', req.output_profile_id);
-    fd.append('arquivo', req.arquivo);
-    return this.api.postForm<Lote>('/lotes', fd);
+    return this.api.post<Lote>('/lotes', req);
   }
 
   reprocessar(id: string): Observable<Lote> {

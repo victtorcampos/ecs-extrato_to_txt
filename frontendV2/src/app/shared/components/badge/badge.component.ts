@@ -2,13 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { LoteStatus } from '../../../core/models/lote.model';
 import { StatusLabelPipe } from '../../pipes/status-label.pipe';
 
-type BadgeVariant = LoteStatus | 'default';
-
-const VARIANT_CLASSES: Record<BadgeVariant, string> = {
-  CONCLUIDO:   'bg-emerald-50 text-emerald-700 border border-emerald-200',
-  PENDENTE:    'bg-amber-50 text-amber-700 border border-amber-200',
-  PROCESSANDO: 'bg-blue-50 text-blue-700 border border-blue-200',
-  ERRO:        'bg-red-50 text-red-700 border border-red-200',
+const VARIANT_CLASSES: Record<string, string> = {
+  concluido:   'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  pendente:    'bg-amber-50 text-amber-700 border border-amber-200',
+  processando: 'bg-blue-50 text-blue-700 border border-blue-200',
+  aguardando:  'bg-slate-100 text-slate-600 border border-slate-200',
+  erro:        'bg-red-50 text-red-700 border border-red-200',
   default:     'bg-slate-50 text-slate-700 border border-slate-200',
 };
 
@@ -26,10 +25,10 @@ const VARIANT_CLASSES: Record<BadgeVariant, string> = {
   `,
 })
 export class BadgeComponent {
-  value = input.required<BadgeVariant | string>();
+  value = input.required<LoteStatus | string>();
 
   classes = computed(() => {
-    const v = this.value() as BadgeVariant;
+    const v = this.value();
     return VARIANT_CLASSES[v] ?? VARIANT_CLASSES['default'];
   });
 }

@@ -28,10 +28,10 @@ import { CnpjPipe } from '../../../shared/pipes/cnpj.pipe';
           data-testid="filter-status"
         >
           <option value="">Todos os status</option>
-          <option value="PENDENTE">Pendente</option>
-          <option value="PROCESSANDO">Processando</option>
-          <option value="CONCLUIDO">Concluído</option>
-          <option value="ERRO">Erro</option>
+          <option value="pendente">Pendente</option>
+          <option value="processando">Processando</option>
+          <option value="concluido">Concluído</option>
+          <option value="erro">Erro</option>
         </select>
 
         <button
@@ -89,7 +89,7 @@ import { CnpjPipe } from '../../../shared/pipes/cnpj.pipe';
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex items-center justify-end gap-2">
-                      @if (lote.status === 'CONCLUIDO') {
+                      @if (lote.status === 'concluido') {
                         <a
                           [href]="loteService.downloadUrl(lote.id)"
                           target="_blank"
@@ -105,7 +105,7 @@ import { CnpjPipe } from '../../../shared/pipes/cnpj.pipe';
                           </svg>
                         </a>
                       }
-                      @if (lote.status === 'ERRO') {
+                      @if (lote.status === 'erro') {
                         <button
                           (click)="reprocessar(lote)"
                           class="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-sm transition-colors duration-150"
@@ -162,7 +162,7 @@ export class LotesComponent implements OnInit {
 
   lotes = signal<Lote[]>([]);
   loading = signal(false);
-  filterStatus = signal<LoteStatus | ''>('');
+  filterStatus = signal<string>('');
   confirmOpen = signal(false);
   loteToDelete = signal<Lote | null>(null);
 
@@ -172,14 +172,14 @@ export class LotesComponent implements OnInit {
     const cnpj = this.sessionService.activeSession()?.cnpj;
     const status = this.filterStatus() || undefined;
     this.loading.set(true);
-    this.loteService.list({ cnpj, status }).subscribe({
+    this.loteService.list({ cnpj, status: status as import('../../../core/models/lote.model').LoteStatus || undefined }).subscribe({
       next: (l) => { this.lotes.set(l); this.loading.set(false); },
       error: () => { this.loading.set(false); },
     });
   }
 
   onStatusChange(event: Event): void {
-    this.filterStatus.set((event.target as HTMLSelectElement).value as LoteStatus | '');
+    this.filterStatus.set((event.target as HTMLSelectElement).value);
     this.load();
   }
 

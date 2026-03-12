@@ -49,17 +49,17 @@ import { CnpjPipe } from '../../../shared/pipes/cnpj.pipe';
             <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">Criado em</p>
             <p class="text-sm font-mono text-slate-800">{{ formatDate(lote()!.criado_em) }}</p>
           </div>
-          @if (lote()!.arquivo_nome) {
+          @if (lote()!.nome_arquivo) {
             <div class="p-4 bg-slate-50 border border-slate-200">
               <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">Arquivo</p>
-              <p class="text-sm font-mono text-slate-800 truncate">{{ lote()!.arquivo_nome }}</p>
+              <p class="text-sm font-mono text-slate-800 truncate">{{ lote()!.nome_arquivo }}</p>
             </div>
           }
-          @if (lote()!.total_registros != null) {
+          @if (lote()!.total_lancamentos != null) {
             <div class="p-4 bg-slate-50 border border-slate-200">
               <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">Registros</p>
               <p class="text-sm font-mono text-slate-800">
-                {{ lote()!.registros_processados }}/{{ lote()!.total_registros }}
+                {{ lote()!.pendencias_resolvidas }}/{{ lote()!.total_lancamentos }}
               </p>
             </div>
           }
@@ -67,7 +67,7 @@ import { CnpjPipe } from '../../../shared/pipes/cnpj.pipe';
 
         <!-- Actions -->
         <div class="flex flex-wrap gap-3">
-          @if (lote()!.status === 'CONCLUIDO') {
+          @if (lote()!.status === 'concluido') {
             <a
               [href]="loteService.downloadUrl(lote()!.id)"
               target="_blank"
@@ -82,7 +82,7 @@ import { CnpjPipe } from '../../../shared/pipes/cnpj.pipe';
               Download TXT
             </a>
           }
-          @if (lote()!.status === 'ERRO') {
+          @if (lote()!.status === 'erro') {
             <button
               (click)="reprocessar()"
               [disabled]="reprocessando()"

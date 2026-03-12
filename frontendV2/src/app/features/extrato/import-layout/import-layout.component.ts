@@ -47,10 +47,10 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
                 data-testid="input-layout-nome" />
             </div>
             <div>
-              <label for="layout-cnpj" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1">CNPJ</label>
-              <input id="layout-cnpj" type="text" formControlName="cnpj"
-                class="w-full h-9 px-3 border border-slate-300 bg-white text-sm font-mono focus:outline-none focus:border-slate-900 transition-colors duration-150"
-                data-testid="input-layout-cnpj" />
+              <p class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1">CNPJ (sessão ativa)</p>
+              <p class="h-9 px-3 flex items-center border border-slate-200 bg-slate-50 text-sm font-mono text-slate-600">
+                {{ sessionService.activeSession()?.cnpj ?? '—' }}
+              </p>
             </div>
           </div>
           <div class="mb-4">
@@ -131,7 +131,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
 })
 export class ImportLayoutComponent implements OnInit {
   private readonly service = inject(ImportLayoutService);
-  private readonly sessionService = inject(SessionService);
+  readonly sessionService = inject(SessionService);
   private readonly toastService = inject(ToastService);
   private readonly fb = inject(FormBuilder);
 
@@ -145,7 +145,6 @@ export class ImportLayoutComponent implements OnInit {
 
   form = this.fb.group({
     nome: ['', Validators.required],
-    cnpj: [this.sessionService.activeSession()?.cnpj ?? '', Validators.required],
     descricao: [''],
   });
 
@@ -162,7 +161,7 @@ export class ImportLayoutComponent implements OnInit {
 
   openForm(l?: ImportLayout): void {
     this.editId.set(l?.id ?? null);
-    this.form.reset({ nome: l?.nome ?? '', cnpj: l?.cnpj ?? this.sessionService.activeSession()?.cnpj ?? '', descricao: l?.descricao ?? '' });
+    this.form.reset({ nome: l?.nome ?? '', descricao: l?.descricao ?? '' });
     this.formOpen.set(true);
   }
 
@@ -170,9 +169,17 @@ export class ImportLayoutComponent implements OnInit {
 
   save(): void {
     if (this.form.invalid) return;
+    const cnpj = this.sessionService.activeSession()?.cnpj;
+    if (!cnpj) { this.toastService.error('Selecione um CNPJ antes de criar um layout.'); return; }
     this.saving.set(true);
     const id = this.editId();
-    const req = id ? this.service.update(id, this.form.getRawValue()) : this.service.create(this.form.getRawValue());
+    const { nome, descricao } = this.form.getRawValue();
+    const body: Partial<ImportLayout> = {
+      nome: nome ?? undefined,
+      cnpj,
+      descricao: descricao ?? undefined,
+    };
+    const req = id ? this.service.update(id, body) : this.service.create(body);
     req.subscribe({
       next: () => { this.saving.set(false); this.closeForm(); this.load(); this.toastService.success('Layout salvo.'); },
       error: () => { this.saving.set(false); this.toastService.error('Erro ao salvar layout.'); },

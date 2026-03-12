@@ -5,10 +5,9 @@ export interface ImportLayout {
   ativo: boolean;
   criado_em: string;
   descricao?: string;
-  mapeamento_colunas?: Record<string, string>;
 }
 
 export interface ImportLayoutListParams {
   cnpj?: string;
-  ativo?: boolean;
+  apenas_ativos?: boolean;
 }

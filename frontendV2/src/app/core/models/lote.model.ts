@@ -1,18 +1,25 @@
-export type LoteStatus = 'PENDENTE' | 'PROCESSANDO' | 'CONCLUIDO' | 'ERRO';
+export type LoteStatus = 'aguardando' | 'processando' | 'pendente' | 'concluido' | 'erro';
 
 export interface Lote {
   id: string;
   protocolo: string;
   cnpj: string;
+  cnpj_formatado: string;
+  periodo: string;
+  nome_layout: string;
+  layout_id?: string;
+  perfil_saida_id?: string;
   status: LoteStatus;
+  mensagem_erro?: string;
+  nome_arquivo?: string;
+  tem_arquivo_saida: boolean;
+  total_lancamentos: number;
+  valor_total: number;
+  total_pendencias: number;
+  pendencias_resolvidas: number;
   criado_em: string;
-  atualizado_em?: string;
-  arquivo_nome?: string;
-  import_layout_id?: string;
-  output_profile_id?: string;
-  total_registros?: number;
-  registros_processados?: number;
-  registros_erro?: number;
+  atualizado_em: string;
+  processado_em?: string;
 }
 
 export interface LoteEstatisticas {
@@ -31,7 +38,10 @@ export interface LoteListParams {
 
 export interface LoteCreateRequest {
   cnpj: string;
-  import_layout_id: string;
-  output_profile_id: string;
-  arquivo: File;
+  periodo_mes: number;
+  periodo_ano: number;
+  arquivo_base64: string;
+  nome_arquivo: string;
+  layout_id?: string;
+  perfil_saida_id?: string;
 }

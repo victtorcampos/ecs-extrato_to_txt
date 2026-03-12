@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { ImportLayout, ImportLayoutListParams } from '../models/import-layout.model';
 
@@ -8,7 +8,10 @@ export class ImportLayoutService {
   private readonly api = inject(ApiService);
 
   list(params?: ImportLayoutListParams): Observable<ImportLayout[]> {
-    return this.api.get<ImportLayout[]>('/import-layouts', params as Record<string, string>);
+    return this.api.get<{ items: ImportLayout[]; total: number; cnpjs_disponiveis: string[] }>(
+      '/import-layouts',
+      params as Record<string, string>
+    ).pipe(map(r => r.items));
   }
 
   cnpjs(): Observable<string[]> {

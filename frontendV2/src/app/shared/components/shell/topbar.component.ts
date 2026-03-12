@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy, Component, computed,
   inject, signal, OnInit
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { SessionService } from '../../../core/services/session.service';
 import { CnpjPipe } from '../../pipes/cnpj.pipe';
@@ -10,7 +9,7 @@ import { CnpjPipe } from '../../pipes/cnpj.pipe';
 @Component({
   selector: 'app-topbar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, CnpjPipe],
+  imports: [CnpjPipe],
   host: {
     class: 'flex items-center justify-between h-16 px-6 bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 shrink-0',
   },

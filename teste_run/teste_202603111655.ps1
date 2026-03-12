@@ -14,7 +14,7 @@
 #   • Arquivo gerar_excels.py já executado (xlsx presentes)
 # ============================================================
 $ErrorActionPreference = "Stop"
-$BASE_URL  = "http://localhost:8001/api/v1"
+$BASE_URL  = "http://localhost:8000/api/v1"
 $CNPJ      = "01293422000165"
 $NOME_USR  = "VICTOR_CAMPOS"
 $COD_FIL   = "456"

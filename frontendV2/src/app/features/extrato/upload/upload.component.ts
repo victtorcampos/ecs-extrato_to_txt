@@ -80,14 +80,36 @@ import { SpinnerComponent } from '../../../shared/components/spinner/spinner.com
           }
         </div>
 
-        <!-- Layout de importação -->
+        <!-- Periodo -->
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label for="periodo_mes" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1.5">Mes</label>
+            <select id="periodo_mes" formControlName="periodo_mes"
+              class="w-full h-10 px-3 border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:border-slate-900 transition-colors duration-150"
+              data-testid="select-mes">
+              <option value="">Selecione...</option>
+              @for (m of meses; track m.v) {
+                <option [value]="m.v">{{ m.label }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label for="periodo_ano" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1.5">Ano</label>
+            <input id="periodo_ano" type="number" formControlName="periodo_ano" min="2000" max="2100"
+              class="w-full h-10 px-3 border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:border-slate-900 transition-colors duration-150"
+              data-testid="input-ano" />
+          </div>
+        </div>
+
+        <!-- Layout de importacao -->
+        <!-- Layout de importacao -->
         <div class="mb-4">
-          <label for="import_layout_id" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1.5">
+          <label for="layout_id" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1.5">
             Layout de Importação
           </label>
           <select
-            id="import_layout_id"
-            formControlName="import_layout_id"
+            id="layout_id"
+            formControlName="layout_id"
             class="w-full h-10 px-3 border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:border-slate-900 transition-colors duration-150"
             data-testid="select-import-layout"
           >
@@ -103,18 +125,18 @@ import { SpinnerComponent } from '../../../shared/components/spinner/spinner.com
 
         <!-- Layout de saída -->
         <div class="mb-6">
-          <label for="output_profile_id" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1.5">
+          <label for="perfil_saida_id" class="block text-xs font-medium text-slate-700 uppercase tracking-wider mb-1.5">
             Layout de Saída
           </label>
           <select
-            id="output_profile_id"
-            formControlName="output_profile_id"
+            id="perfil_saida_id"
+            formControlName="perfil_saida_id"
             class="w-full h-10 px-3 border border-slate-300 bg-white text-sm text-slate-900 focus:outline-none focus:border-slate-900 transition-colors duration-150"
             data-testid="select-output-profile"
           >
             <option value="">Selecione um perfil...</option>
             @for (profile of outputProfiles(); track profile.id) {
-              <option [value]="profile.id">{{ profile.nome }} — {{ profile.sistema }}</option>
+              <option [value]="profile.id">{{ profile.nome }} — {{ profile.sistema_destino_nome }}</option>
             }
           </select>
           @if (loadingProfiles()) {
@@ -161,9 +183,17 @@ export class UploadComponent implements OnInit {
   loadingLayouts = signal(false);
   loadingProfiles = signal(false);
 
+  readonly meses = [
+    { v: 1, label: '01' }, { v: 2, label: '02' }, { v: 3, label: '03' }, { v: 4, label: '04' },
+    { v: 5, label: '05' }, { v: 6, label: '06' }, { v: 7, label: '07' }, { v: 8, label: '08' },
+    { v: 9, label: '09' }, { v: 10, label: '10' }, { v: 11, label: '11' }, { v: 12, label: '12' },
+  ];
+
   form = this.fb.group({
-    import_layout_id: ['', Validators.required],
-    output_profile_id: ['', Validators.required],
+    periodo_mes: ['', Validators.required],
+    periodo_ano: [new Date().getFullYear(), [Validators.required, Validators.min(2000), Validators.max(2100)]],
+    layout_id: ['', Validators.required],
+    perfil_saida_id: ['', Validators.required],
   });
 
   fileSizeLabel(): string {
@@ -181,7 +211,7 @@ export class UploadComponent implements OnInit {
       error: () => { this.loadingLayouts.set(false); },
     });
     this.loadingProfiles.set(true);
-    this.outputProfileService.list({ ativo: true }).subscribe({
+    this.outputProfileService.list({ apenas_ativos: true }).subscribe({
       next: (p) => { this.outputProfiles.set(p); this.loadingProfiles.set(false); },
       error: () => { this.loadingProfiles.set(false); },
     });
@@ -217,23 +247,32 @@ export class UploadComponent implements OnInit {
     if (!file || this.form.invalid || !cnpj) return;
 
     this.submitting.set(true);
-    const { import_layout_id, output_profile_id } = this.form.getRawValue();
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl.substring(dataUrl.indexOf(',') + 1);
+      const { periodo_mes, periodo_ano, layout_id, perfil_saida_id } = this.form.getRawValue();
 
-    this.loteService.create({
-      cnpj,
-      import_layout_id: import_layout_id!,
-      output_profile_id: output_profile_id!,
-      arquivo: file,
-    }).subscribe({
-      next: (lote) => {
-        this.submitting.set(false);
-        this.toastService.success(`Lote ${lote.protocolo} criado com sucesso.`);
-        this.router.navigate(['/extrato/lotes', lote.id]);
-      },
-      error: (err) => {
-        this.submitting.set(false);
-        this.toastService.error(err?.error?.detail ?? 'Erro ao processar o extrato.');
-      },
-    });
+      this.loteService.create({
+        cnpj,
+        periodo_mes: Number(periodo_mes),
+        periodo_ano: Number(periodo_ano),
+        arquivo_base64: base64,
+        nome_arquivo: file.name,
+        layout_id: layout_id ?? undefined,
+        perfil_saida_id: perfil_saida_id ?? undefined,
+      }).subscribe({
+        next: (lote) => {
+          this.submitting.set(false);
+          this.toastService.success('Lote ' + lote.protocolo + ' criado com sucesso.');
+          this.router.navigate(['/extrato/lotes', lote.id]);
+        },
+        error: (err) => {
+          this.submitting.set(false);
+          this.toastService.error(err?.error?.detail ?? 'Erro ao processar o extrato.');
+        },
+      });
+    };
+    reader.readAsDataURL(file);
   }
 }
