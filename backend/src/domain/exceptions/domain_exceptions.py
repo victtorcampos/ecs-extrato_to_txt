@@ -48,11 +48,6 @@ class PendenciasMapeamentoError(DomainError):
         super().__init__(f"Existem {len(contas_pendentes)} conta(s) sem mapeamento")
 
 
-class LayoutNaoEncontradoError(DomainError):
-    """Layout de Excel não encontrado"""
-    pass
-
-
 class ArquivoExcelInvalidoError(DomainError):
     """Arquivo Excel com formato inválido"""
     pass

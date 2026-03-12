@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from uuid import uuid4
 
-from ..value_objects.layout_value_objects import TipoDado, TipoSinal
+from ..value_objects.layout_value_objects import TipoDado, TipoSinal, MAPEAMENTO_TIPO_DC_PADRAO
 
 
 @dataclass
@@ -37,8 +37,8 @@ class CondicaoContaLayout:
 
 
 @dataclass
-class AcaoRegra:
-    """Ação a executar quando uma regra é ativada"""
+class AcaoContaLayout:
+    """Ação a executar quando uma regra de conta é ativada"""
     campo_destino: str = ""           # "conta_debito", "conta_credito", "historico"
     valor: str = ""                   # Valor a definir
 
@@ -49,8 +49,8 @@ class AcaoRegra:
         }
 
     @staticmethod
-    def from_dict(data: dict) -> 'AcaoRegra':
-        return AcaoRegra(
+    def from_dict(data: dict) -> 'AcaoContaLayout':
+        return AcaoContaLayout(
             campo_destino=data.get("campo_destino", ""),
             valor=data.get("valor", ""),
         )
@@ -66,17 +66,17 @@ class RegraContaLayout:
     condicoes: List[CondicaoContaLayout] = field(default_factory=list)  # AND/OR conforme operador_logico
     conta_debito: str = ""            # Retrocompat: ação simples
     conta_credito: str = ""           # Retrocompat: ação simples
-    acoes: List[AcaoRegra] = field(default_factory=list)  # Múltiplas ações
+    acoes: List[AcaoContaLayout] = field(default_factory=list)  # Múltiplas ações
 
-    def obter_acoes_efetivas(self) -> List[AcaoRegra]:
+    def obter_acoes_efetivas(self) -> List[AcaoContaLayout]:
         """Retorna ações efetivas: usa `acoes` se preenchido, senão converte conta_debito/conta_credito"""
         if self.acoes:
             return self.acoes
         resultado = []
         if self.conta_debito:
-            resultado.append(AcaoRegra(campo_destino="conta_debito", valor=self.conta_debito))
+            resultado.append(AcaoContaLayout(campo_destino="conta_debito", valor=self.conta_debito))
         if self.conta_credito:
-            resultado.append(AcaoRegra(campo_destino="conta_credito", valor=self.conta_credito))
+            resultado.append(AcaoContaLayout(campo_destino="conta_credito", valor=self.conta_credito))
         return resultado
 
     def to_dict(self) -> dict:
@@ -101,7 +101,7 @@ class RegraContaLayout:
             condicoes=[CondicaoContaLayout.from_dict(c) for c in data.get("condicoes", [])],
             conta_debito=data.get("conta_debito", ""),
             conta_credito=data.get("conta_credito", ""),
-            acoes=[AcaoRegra.from_dict(a) for a in data.get("acoes", [])],
+            acoes=[AcaoContaLayout.from_dict(a) for a in data.get("acoes", [])],
         )
 
 
@@ -192,15 +192,8 @@ class ConfigValor:
     coluna_debito: Optional[str] = None        # Coluna de débito (para COLUNAS_SEPARADAS)
     coluna_credito: Optional[str] = None       # Coluna de crédito (para COLUNAS_SEPARADAS)
     case_insensitive: bool = True              # Normalizar texto para comparação
-    mapeamento_tipo: Dict[str, str] = field(default_factory=lambda: {
-        "D": "debito", "C": "credito",
-        "d": "debito", "c": "credito",
-        "débito": "debito", "crédito": "credito",
-        "debito": "debito", "credito": "credito",
-        "DÉBITO": "debito", "CRÉDITO": "credito",
-        "DEBITO": "debito", "CREDITO": "credito",
-    })
-    
+    mapeamento_tipo: Dict[str, str] = field(default_factory=lambda: dict(MAPEAMENTO_TIPO_DC_PADRAO))
+
     def to_dict(self) -> dict:
         return {
             "tipo_sinal": self.tipo_sinal.value if isinstance(self.tipo_sinal, TipoSinal) else self.tipo_sinal,
@@ -210,7 +203,7 @@ class ConfigValor:
             "case_insensitive": self.case_insensitive,
             "mapeamento_tipo": self.mapeamento_tipo
         }
-    
+
     @staticmethod
     def from_dict(data: dict) -> 'ConfigValor':
         return ConfigValor(
@@ -219,14 +212,7 @@ class ConfigValor:
             coluna_debito=data.get("coluna_debito"),
             coluna_credito=data.get("coluna_credito"),
             case_insensitive=data.get("case_insensitive", True),
-            mapeamento_tipo=data.get("mapeamento_tipo", {
-                "D": "debito", "C": "credito",
-                "d": "debito", "c": "credito",
-                "débito": "debito", "crédito": "credito",
-                "debito": "debito", "credito": "credito",
-                "DÉBITO": "debito", "CRÉDITO": "credito",
-                "DEBITO": "debito", "CREDITO": "credito",
-            })
+            mapeamento_tipo=data.get("mapeamento_tipo", MAPEAMENTO_TIPO_DC_PADRAO)
         )
 
 

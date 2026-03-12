@@ -23,11 +23,9 @@ class LoteModel(Base):
     status = Column(String(20), default="aguardando")
     mensagem_erro = Column(Text, nullable=True)
     
-    arquivo_original = Column(Text, nullable=True)
     nome_arquivo = Column(String(255), nullable=True)
-    arquivo_saida = Column(Text, nullable=True)
 
-    # Novos caminhos para armazenamento em disco
+    # Caminhos para armazenamento em disco
     caminho_arquivo_original = Column(String, nullable=True)
     caminho_arquivo_saida = Column(String, nullable=True)
     

@@ -28,7 +28,13 @@
       "Bash(pip install:*)",
       "Bash(find c:Apppythonecsecs-extrato_to_txtbackendsrcdomain -type f -name *.py)",
       "Bash(find c:Apppythonecsecs-extrato_to_txtbackendsrcapplication -type f -name *.py)",
-      "Bash(python teste_run/gerar_excels.py)"
+      "Bash(python teste_run/gerar_excels.py)",
+      "Bash(del \"c:\\\\App\\\\python\\\\ecs\\\\ecs-extrato_to_txt\\\\backend\\\\src\\\\application\\\\ports\\\\services\\\\ofx_parser_port.py\")",
+      "Bash(echo \"from .service_ports import ExcelParserPort, TxtGeneratorPort, EmailSenderPort:*)",
+      "Bash(\"c:/App/python/ecs/ecs-extrato_to_txt/backend/src/application/ports/services/__init__.py\")",
+      "Bash(echo \"from .entities import Lote, Lancamento, StatusLote, TipoLancamento, PendenciaMapeamento, MapeamentoConta:*)",
+      "Bash(\"c:/App/python/ecs/ecs-extrato_to_txt/backend/src/domain/entities/__init__.py\")",
+      "Bash(venv/Scripts/python.exe -:*)"
     ]
   }
 }

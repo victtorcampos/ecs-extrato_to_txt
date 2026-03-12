@@ -54,6 +54,52 @@ class Lancamento:
         """Verifica se o lançamento pertence ao período"""
         return self.data.month == mes and self.data.year == ano
 
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "data": self.data.isoformat() if self.data else None,
+            "conta_debito": self.conta_debito,
+            "conta_credito": self.conta_credito,
+            "valor": self.valor,
+            "historico": self.historico,
+            "documento": self.documento,
+            "codigo_historico": self.codigo_historico,
+            "nome_empresa": self.nome_empresa,
+            "conta_debito_mapeada": self.conta_debito_mapeada,
+            "conta_credito_mapeada": self.conta_credito_mapeada,
+            "unidade_negocio": self.unidade_negocio,
+            "fantasia": self.fantasia,
+            "fato_contabil": self.fato_contabil,
+            "empresa": self.empresa,
+            "tipo_lancamento": self.tipo_lancamento if isinstance(self.tipo_lancamento, str) else (self.tipo_lancamento.value if self.tipo_lancamento else "X"),
+            "grupo_id": self.grupo_id,
+        }
+
+    @staticmethod
+    def from_dict(d: dict) -> 'Lancamento':
+        data = None
+        if d.get("data"):
+            data = date.fromisoformat(d["data"])
+        return Lancamento(
+            id=d.get("id", ""),
+            data=data,
+            conta_debito=d.get("conta_debito", ""),
+            conta_credito=d.get("conta_credito", ""),
+            valor=d.get("valor", 0.0),
+            historico=d.get("historico", ""),
+            documento=d.get("documento", ""),
+            codigo_historico=d.get("codigo_historico", 0),
+            nome_empresa=d.get("nome_empresa", ""),
+            conta_debito_mapeada=d.get("conta_debito_mapeada"),
+            conta_credito_mapeada=d.get("conta_credito_mapeada"),
+            unidade_negocio=d.get("unidade_negocio", ""),
+            fantasia=d.get("fantasia", ""),
+            fato_contabil=d.get("fato_contabil", ""),
+            empresa=d.get("empresa", ""),
+            tipo_lancamento=d.get("tipo_lancamento", "X"),
+            grupo_id=d.get("grupo_id"),
+        )
+
 
 @dataclass
 class PendenciaMapeamento:
@@ -82,15 +128,10 @@ class Lote:
     
     status: StatusLote = StatusLote.AGUARDANDO
     mensagem_erro: Optional[str] = None
-    
-    # Arquivo original (base64 — legado)
-    arquivo_original: Optional[str] = None
+
     nome_arquivo: Optional[str] = None
 
-    # Arquivo processado (base64 — legado)
-    arquivo_saida: Optional[str] = None
-
-    # Caminhos para armazenamento em disco (novo)
+    # Caminhos para armazenamento em disco
     caminho_arquivo_original: Optional[str] = None
     caminho_arquivo_saida: Optional[str] = None
     
