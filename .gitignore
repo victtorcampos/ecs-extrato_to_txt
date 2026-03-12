@@ -219,5 +219,4 @@ data/files/
 *.env.*
 /frontend/node_modules
 frontend/package-lock.json
-*.db
 backend/contabil.db
