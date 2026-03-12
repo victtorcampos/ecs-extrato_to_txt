@@ -9,6 +9,7 @@ from datetime import date, datetime
 from python_calamine import CalamineWorkbook
 
 from src.config.logging_config import get_logger
+from src.adapters.outbound.excel_parser.utils import serialize_cell as _serialize_cell
 
 logger = get_logger("detect_usecases")
 
@@ -41,17 +42,6 @@ DC_PATTERNS = [
 
 
 # ─── Helpers ───────────────────────────────────────────────────────
-
-def _serialize_cell(value):
-    if value is None:
-        return None
-    if isinstance(value, datetime):
-        return value.strftime("%d/%m/%Y %H:%M")
-    if isinstance(value, date):
-        return value.strftime("%d/%m/%Y")
-    if isinstance(value, (int, float)):
-        return value
-    return str(value)
 
 
 def _is_text(value) -> bool:

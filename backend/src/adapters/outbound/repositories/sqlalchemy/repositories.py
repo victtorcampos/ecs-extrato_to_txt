@@ -27,26 +27,23 @@ class LoteMapper:
             codigo_matriz_filial=lote.codigo_matriz_filial,
             status=lote.status.value if isinstance(lote.status, StatusLote) else lote.status,
             mensagem_erro=lote.mensagem_erro,
-            arquivo_original=lote.arquivo_original,
             nome_arquivo=lote.nome_arquivo,
-            arquivo_saida=lote.arquivo_saida,
+            caminho_arquivo_original=lote.caminho_arquivo_original,
+            caminho_arquivo_saida=lote.caminho_arquivo_saida,
             lancamentos_json=[LoteMapper._lancamento_to_dict(l) for l in lote.lancamentos],
             pendencias_json=[LoteMapper._pendencia_to_dict(p) for p in lote.pendencias],
             criado_em=lote.criado_em,
             atualizado_em=lote.atualizado_em,
             processado_em=lote.processado_em
         )
-        # Adicionar novos campos de caminho
-        model.caminho_arquivo_original = lote.caminho_arquivo_original
-        model.caminho_arquivo_saida = lote.caminho_arquivo_saida
         return model
-    
+
     @staticmethod
     def to_entity(model: LoteModel) -> Lote:
         lancamentos = [LoteMapper._dict_to_lancamento(d) for d in (model.lancamentos_json or [])]
         pendencias = [LoteMapper._dict_to_pendencia(d) for d in (model.pendencias_json or [])]
 
-        lote = Lote(
+        return Lote(
             id=model.id,
             protocolo=model.protocolo,
             cnpj=model.cnpj,
@@ -59,68 +56,23 @@ class LoteMapper:
             codigo_matriz_filial=model.codigo_matriz_filial,
             status=StatusLote(model.status),
             mensagem_erro=model.mensagem_erro,
-            arquivo_original=model.arquivo_original,
             nome_arquivo=model.nome_arquivo,
-            arquivo_saida=model.arquivo_saida,
+            caminho_arquivo_original=getattr(model, 'caminho_arquivo_original', None),
+            caminho_arquivo_saida=getattr(model, 'caminho_arquivo_saida', None),
             lancamentos=lancamentos,
             pendencias=pendencias,
             criado_em=model.criado_em,
             atualizado_em=model.atualizado_em,
             processado_em=model.processado_em
         )
-        # Adicionar novos campos de caminho (com fallback para legado)
-        lote.caminho_arquivo_original = getattr(model, 'caminho_arquivo_original', None)
-        lote.caminho_arquivo_saida = getattr(model, 'caminho_arquivo_saida', None)
-        return lote
     
     @staticmethod
     def _lancamento_to_dict(l: Lancamento) -> dict:
-        return {
-            "id": l.id,
-            "data": l.data.isoformat() if l.data else None,
-            "conta_debito": l.conta_debito,
-            "conta_credito": l.conta_credito,
-            "valor": l.valor,
-            "historico": l.historico,
-            "documento": l.documento,
-            "codigo_historico": l.codigo_historico,
-            "nome_empresa": l.nome_empresa,
-            "conta_debito_mapeada": l.conta_debito_mapeada,
-            "conta_credito_mapeada": l.conta_credito_mapeada,
-            "unidade_negocio": l.unidade_negocio,
-            "fantasia": l.fantasia,
-            "fato_contabil": l.fato_contabil,
-            "empresa": l.empresa,
-            "tipo_lancamento": l.tipo_lancamento if isinstance(l.tipo_lancamento, str) else (l.tipo_lancamento.value if l.tipo_lancamento else "X"),
-            "grupo_id": l.grupo_id
-        }
-    
+        return l.to_dict()
+
     @staticmethod
     def _dict_to_lancamento(d: dict) -> Lancamento:
-        from datetime import date
-        data = None
-        if d.get("data"):
-            data = date.fromisoformat(d["data"])
-        
-        return Lancamento(
-            id=d.get("id", ""),
-            data=data,
-            conta_debito=d.get("conta_debito", ""),
-            conta_credito=d.get("conta_credito", ""),
-            valor=d.get("valor", 0.0),
-            historico=d.get("historico", ""),
-            documento=d.get("documento", ""),
-            codigo_historico=d.get("codigo_historico", 0),
-            nome_empresa=d.get("nome_empresa", ""),
-            conta_debito_mapeada=d.get("conta_debito_mapeada"),
-            conta_credito_mapeada=d.get("conta_credito_mapeada"),
-            unidade_negocio=d.get("unidade_negocio", ""),
-            fantasia=d.get("fantasia", ""),
-            fato_contabil=d.get("fato_contabil", ""),
-            empresa=d.get("empresa", ""),
-            tipo_lancamento=d.get("tipo_lancamento", "X"),
-            grupo_id=d.get("grupo_id")
-        )
+        return Lancamento.from_dict(d)
     
     @staticmethod
     def _pendencia_to_dict(p: PendenciaMapeamento) -> dict:
@@ -207,15 +159,13 @@ class SQLAlchemyLoteRepository(LoteRepositoryPort):
             model.codigo_matriz_filial = lote.codigo_matriz_filial
             model.status = lote.status.value if isinstance(lote.status, StatusLote) else lote.status
             model.mensagem_erro = lote.mensagem_erro
-            model.arquivo_original = lote.arquivo_original
             model.nome_arquivo = lote.nome_arquivo
-            model.arquivo_saida = lote.arquivo_saida
+            model.caminho_arquivo_original = lote.caminho_arquivo_original
+            model.caminho_arquivo_saida = lote.caminho_arquivo_saida
             model.lancamentos_json = [LoteMapper._lancamento_to_dict(l) for l in lote.lancamentos]
             model.pendencias_json = [LoteMapper._pendencia_to_dict(p) for p in lote.pendencias]
             model.atualizado_em = lote.atualizado_em
             model.processado_em = lote.processado_em
-            model.caminho_arquivo_original = lote.caminho_arquivo_original
-            model.caminho_arquivo_saida = lote.caminho_arquivo_saida
 
             await self.session.commit()
             await self.session.refresh(model)
@@ -262,29 +212,16 @@ class SQLAlchemyMapeamentoRepository(MapeamentoContaRepositoryPort):
         )
     
     async def salvar(self, mapeamento: MapeamentoConta) -> MapeamentoConta:
-        # Verificar se já existe
-        existing = await self.buscar_por_conta_cliente(mapeamento.cnpj, mapeamento.conta_cliente)
-        if existing:
-            # Atualizar existente
-            result = await self.session.execute(
-                select(MapeamentoContaModel).where(MapeamentoContaModel.id == existing.id)
-            )
-            model = result.scalar_one()
-            model.conta_padrao = mapeamento.conta_padrao
-            model.nome_conta_cliente = mapeamento.nome_conta_cliente
-            model.nome_conta_padrao = mapeamento.nome_conta_padrao
-        else:
-            model = MapeamentoContaModel(
-                id=mapeamento.id,
-                cnpj=mapeamento.cnpj,
-                conta_cliente=mapeamento.conta_cliente,
-                conta_padrao=mapeamento.conta_padrao,
-                nome_conta_cliente=mapeamento.nome_conta_cliente,
-                nome_conta_padrao=mapeamento.nome_conta_padrao,
-                criado_em=mapeamento.criado_em
-            )
-            self.session.add(model)
-        
+        model = MapeamentoContaModel(
+            id=mapeamento.id,
+            cnpj=mapeamento.cnpj,
+            conta_cliente=mapeamento.conta_cliente,
+            conta_padrao=mapeamento.conta_padrao,
+            nome_conta_cliente=mapeamento.nome_conta_cliente,
+            nome_conta_padrao=mapeamento.nome_conta_padrao,
+            criado_em=mapeamento.criado_em
+        )
+        self.session.add(model)
         await self.session.commit()
         return mapeamento
     

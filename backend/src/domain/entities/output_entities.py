@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, Dict
 from enum import Enum
+from uuid import uuid4
 
 
 class FormatoSaida(str, Enum):
@@ -81,14 +82,14 @@ class PerfilSaida:
     descricao: Optional[str] = None
     padrao: bool = False
     ativo: bool = True
-    id: str = field(default_factory=lambda: __import__('uuid').uuid4().__str__())
+    id: str = field(default_factory=lambda: str(uuid4()))
     criado_em: datetime = field(default_factory=datetime.now)
     atualizado_em: datetime = field(default_factory=datetime.now)
 
     @staticmethod
     def from_dict(data: dict) -> 'PerfilSaida':
         return PerfilSaida(
-            id=data.get("id", __import__('uuid').uuid4().__str__()),
+            id=data.get("id", str(uuid4())),
             nome=data["nome"],
             sistema_destino=SistemaDestino(data["sistema_destino"]),
             formato=FormatoSaida(data["formato"]),

@@ -152,3 +152,13 @@ CAMPOS_DESTINO = {
 def get_campos_disponiveis() -> dict:
     """Retorna campos disponíveis para mapeamento"""
     return CAMPOS_DESTINO
+
+
+MAPEAMENTO_TIPO_DC_PADRAO = {
+    "D": "debito", "C": "credito",
+    "d": "debito", "c": "credito",
+    "débito": "debito", "crédito": "credito",
+    "debito": "debito", "credito": "credito",
+    "DÉBITO": "debito", "CRÉDITO": "credito",
+    "DEBITO": "debito", "CREDITO": "credito",
+}

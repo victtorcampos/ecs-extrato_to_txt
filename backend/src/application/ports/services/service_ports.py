@@ -1,21 +1,7 @@
 """Portas de Serviços - Interfaces"""
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
-from src.domain.entities import Lancamento
-
-
-class ExcelParserPort(ABC):
-    """Interface para parser de Excel"""
-    
-    @abstractmethod
-    def parse(self, arquivo_base64: str, layout: str = "padrao") -> List[Lancamento]:
-        """Extrai lançamentos de um arquivo Excel"""
-        pass
-    
-    @abstractmethod
-    def validar_estrutura(self, arquivo_base64: str, layout: str = "padrao") -> bool:
-        """Valida se o arquivo tem a estrutura esperada"""
-        pass
+from src.domain.entities import Lancamento  # noqa: F401
 
 
 class TxtGeneratorPort(ABC):
@@ -62,19 +48,3 @@ class EmailSenderPort(ABC):
         pass
 
 
-class ContaMapperPort(ABC):
-    """Interface para mapeamento de contas"""
-    
-    @abstractmethod
-    def mapear(self, conta_cliente: str, mapeamentos: Dict[str, str]) -> Optional[str]:
-        """Mapeia uma conta do cliente para conta padrão"""
-        pass
-    
-    @abstractmethod
-    def identificar_pendencias(
-        self, 
-        lancamentos: List[Lancamento], 
-        mapeamentos: Dict[str, str]
-    ) -> List[str]:
-        """Identifica contas sem mapeamento"""
-        pass

@@ -34,11 +34,6 @@ async def get_perfil_saida_repository(session: AsyncSession = Depends(get_sessio
 
 # ─── Service Providers ──────────────────────────────────────────────
 
-def get_excel_parser():
-    from src.adapters.outbound.excel_parser import CalamineExcelParser
-    return CalamineExcelParser()
-
-
 def get_dynamic_parser():
     from src.adapters.outbound.excel_parser import DynamicExcelParser
     return DynamicExcelParser()
@@ -71,7 +66,7 @@ async def create_processar_lote_dependencies():
         SQLAlchemyLayoutRepository,
         SQLAlchemyPerfilSaidaRepository,
     )
-    from src.adapters.outbound.excel_parser import CalamineExcelParser, DynamicExcelParser
+    from src.adapters.outbound.excel_parser import DynamicExcelParser
     from src.adapters.outbound.txt_generator import TxtGenerator
     from src.adapters.outbound.email import ResendEmailSender
     from src.application.usecases import ProcessarLoteUseCase
@@ -89,7 +84,6 @@ async def create_processar_lote_dependencies():
         use_case = ProcessarLoteUseCase(
             lote_repo,
             mapeamento_repo,
-            CalamineExcelParser(),
             TxtGenerator(),
             ResendEmailSender(),
             layout_repository=layout_repo,

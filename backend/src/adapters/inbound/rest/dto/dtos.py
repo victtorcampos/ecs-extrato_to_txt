@@ -2,6 +2,7 @@
 from datetime import datetime
 from typing import Optional, List, Dict
 from pydantic import BaseModel, EmailStr, Field
+from src.domain.value_objects import MAPEAMENTO_TIPO_DC_PADRAO
 
 
 class CriarLoteRequest(BaseModel):
@@ -171,14 +172,7 @@ class ConfigValorDTO(BaseModel):
     coluna_debito: Optional[str] = None
     coluna_credito: Optional[str] = None
     case_insensitive: bool = True
-    mapeamento_tipo: Dict[str, str] = Field(default_factory=lambda: {
-        "D": "debito", "C": "credito",
-        "d": "debito", "c": "credito",
-        "débito": "debito", "crédito": "credito",
-        "debito": "debito", "credito": "credito",
-        "DÉBITO": "debito", "CRÉDITO": "credito",
-        "DEBITO": "debito", "CREDITO": "credito",
-    })
+    mapeamento_tipo: Dict[str, str] = Field(default_factory=lambda: dict(MAPEAMENTO_TIPO_DC_PADRAO))
 
 
 class ConfigHistoricoPadraoDTO(BaseModel):

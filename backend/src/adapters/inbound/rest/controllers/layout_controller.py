@@ -38,6 +38,7 @@ from src.domain.exceptions import DomainError, LayoutNaoEncontradoError
 from src.domain.value_objects import get_campos_disponiveis
 from src.config.dependencies import get_layout_repository, get_regra_repository, get_mapeamento_repository
 from src.config.logging_config import get_logger
+from src.adapters.outbound.excel_parser.utils import serialize_cell as _serialize_cell
 
 logger = get_logger("layout_controller")
 
@@ -150,19 +151,6 @@ async def preview_excel(request: PreviewExcelRequest):
         logger.error(f"Erro ao processar preview Excel: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail=f"Erro ao processar arquivo: {str(e)}")
 
-
-def _serialize_cell(value):
-    """Serializa um valor de célula para JSON"""
-    if value is None:
-        return None
-    from datetime import date, datetime
-    if isinstance(value, datetime):
-        return value.strftime("%d/%m/%Y %H:%M")
-    if isinstance(value, date):
-        return value.strftime("%d/%m/%Y")
-    if isinstance(value, (int, float)):
-        return value
-    return str(value)
 
 
 @router.get("/cnpjs", response_model=list[str])

@@ -8,11 +8,12 @@ from src.domain.value_objects import CNPJ, PeriodoContabil, Email
 from src.domain.exceptions import (
     ProtocoloNaoEncontradoError,
     LancamentoForaDoPeriodoError,
-    PendenciasMapeamentoError
+    PendenciasMapeamentoError,
+    ArquivoExcelInvalidoError,
 )
 from src.application.ports.repositories import LoteRepositoryPort, MapeamentoContaRepositoryPort
 from src.application.ports.repositories.layout_repository_port import LayoutRepositoryPort
-from src.application.ports.services import ExcelParserPort, TxtGeneratorPort, EmailSenderPort, FileStoragePort
+from src.application.ports.services import TxtGeneratorPort, EmailSenderPort, FileStoragePort
 from src.config.logging_config import get_logger
 
 logger = get_logger("usecases")
@@ -20,10 +21,11 @@ logger = get_logger("usecases")
 
 class CriarProtocoloUseCase:
     """Caso de uso para criar um novo protocolo/lote"""
-    
-    def __init__(self, lote_repository: LoteRepositoryPort):
+
+    def __init__(self, lote_repository: LoteRepositoryPort, file_storage: FileStoragePort = None):
         self.lote_repository = lote_repository
-    
+        self.file_storage = file_storage
+
     async def executar(
         self,
         cnpj: str,
@@ -38,7 +40,8 @@ class CriarProtocoloUseCase:
         perfil_saida_id: str = None
     ) -> Lote:
         """Cria um novo lote com protocolo único"""
-        
+        import base64 as _base64
+
         # Validar Value Objects
         cnpj_vo = CNPJ(cnpj)
         periodo_vo = PeriodoContabil(periodo_mes, periodo_ano)
@@ -46,10 +49,20 @@ class CriarProtocoloUseCase:
         if email_notificacao:
             email_vo = Email(email_notificacao)
             email_valor = email_vo.valor
-        
+
         # Gerar protocolo único
         protocolo = f"PROT-{datetime.now().strftime('%Y%m%d%H%M%S')}-{str(uuid4())[:8].upper()}"
-        
+
+        # Salvar arquivo Excel em disco
+        caminho_original = None
+        if self.file_storage and arquivo_base64:
+            arquivo_bytes = _base64.b64decode(arquivo_base64)
+            caminho_original = await self.file_storage.salvar(
+                conteudo=arquivo_bytes,
+                nome_arquivo=nome_arquivo or f"{protocolo}.xlsx",
+                subdiretorio="originais"
+            )
+
         # Criar lote
         lote = Lote(
             protocolo=protocolo,
@@ -61,11 +74,11 @@ class CriarProtocoloUseCase:
             layout_id=layout_id,
             perfil_saida_id=perfil_saida_id,
             codigo_matriz_filial=codigo_matriz_filial,
-            arquivo_original=arquivo_base64,
             nome_arquivo=nome_arquivo,
+            caminho_arquivo_original=caminho_original,
             status=StatusLote.AGUARDANDO
         )
-        
+
         # Persistir
         return await self.lote_repository.salvar(lote)
 
@@ -77,7 +90,6 @@ class ProcessarLoteUseCase:
         self,
         lote_repository: LoteRepositoryPort,
         mapeamento_repository: MapeamentoContaRepositoryPort,
-        excel_parser: ExcelParserPort,
         txt_generator: TxtGeneratorPort,
         email_sender: EmailSenderPort,
         layout_repository: LayoutRepositoryPort = None,
@@ -87,7 +99,6 @@ class ProcessarLoteUseCase:
     ):
         self.lote_repository = lote_repository
         self.mapeamento_repository = mapeamento_repository
-        self.excel_parser = excel_parser
         self.txt_generator = txt_generator
         self.email_sender = email_sender
         self.layout_repository = layout_repository
@@ -171,27 +182,16 @@ class ProcessarLoteUseCase:
                 await self.lote_repository.atualizar(lote)
                 return lote
             
-            # Gerar arquivo de saída usando perfil de saída (se disponível) ou TXT padrão
+            # Gerar arquivo de saída
             arquivo_saida = await self._gerar_saida(lote, lancamentos, mapeamentos_dict)
 
-            # Salvar em disco se FileStoragePort disponível, senão usar Base64 (retrocompatibilidade)
-            if self.file_storage:
-                try:
-                    caminho = await self.file_storage.salvar(
-                        conteudo=arquivo_saida.encode('utf-8'),
-                        nome_arquivo=f"{lote.protocolo}.txt",
-                        subdiretorio="saidas"
-                    )
-                    lote.caminho_arquivo_saida = caminho
-                    lote.arquivo_saida = None  # Não armazenar Base64
-                except Exception as e:
-                    logger.error(f"Erro ao salvar arquivo em disco para {lote.protocolo}: {e}, usando Base64 como fallback")
-                    import base64
-                    lote.arquivo_saida = base64.b64encode(arquivo_saida.encode('utf-8')).decode('utf-8')
-            else:
-                # Fallback: usar Base64 se FileStorage não disponível
-                import base64
-                lote.arquivo_saida = base64.b64encode(arquivo_saida.encode('utf-8')).decode('utf-8')
+            # Salvar em disco
+            caminho = await self.file_storage.salvar(
+                conteudo=arquivo_saida.encode('utf-8'),
+                nome_arquivo=f"{lote.protocolo}.txt",
+                subdiretorio="saidas"
+            )
+            lote.caminho_arquivo_saida = caminho
 
             lote.status = StatusLote.CONCLUIDO
             lote.processado_em = datetime.now()
@@ -232,13 +232,18 @@ class ProcessarLoteUseCase:
             raise
 
     async def _parse_excel(self, lote: Lote) -> List[Lancamento]:
-        """Parse Excel usando parser dinâmico (se layout disponível) ou parser padrão"""
-        if lote.layout_id and self.layout_repository and self.dynamic_parser:
-            layout = await self.layout_repository.buscar_por_id(lote.layout_id)
-            if layout and layout.colunas:
-                return self.dynamic_parser.parse(lote.arquivo_original, layout)
-        # Fallback: parser padrão hardcoded
-        return self.excel_parser.parse(lote.arquivo_original, lote.nome_layout)
+        """Parse Excel usando parser dinâmico"""
+        if not (lote.layout_id and self.layout_repository and self.dynamic_parser):
+            raise ArquivoExcelInvalidoError("Layout não configurado para este lote")
+        if not lote.caminho_arquivo_original:
+            raise ArquivoExcelInvalidoError("Arquivo original não encontrado no disco")
+        layout = await self.layout_repository.buscar_por_id(lote.layout_id)
+        if not (layout and layout.colunas):
+            raise ArquivoExcelInvalidoError("Layout sem colunas configuradas")
+        import base64 as _base64
+        arquivo_bytes = await self.file_storage.ler(lote.caminho_arquivo_original)
+        arquivo_base64 = _base64.b64encode(arquivo_bytes).decode('utf-8')
+        return self.dynamic_parser.parse(arquivo_base64, layout)
 
     async def _gerar_saida(self, lote: Lote, lancamentos: List[Lancamento], mapeamentos: Dict[str, str]) -> str:
         """Gera arquivo de saída usando perfil de saída (se disponível) ou TXT padrão"""
